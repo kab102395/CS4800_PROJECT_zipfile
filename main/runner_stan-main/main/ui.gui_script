@@ -1,0 +1,43 @@
+local function update_score_label(self)
+	local node = gui.get_node("score_value")
+	gui.set_text(node, tostring(self.score))
+	gui.animate(node, gui.PROP_SCALE, vmath.vector3(1.15), gui.EASING_OUTBACK, 0.15, 0.0, function()
+		gui.animate(node, gui.PROP_SCALE, vmath.vector3(1.0), gui.EASING_INBACK, 0.1)
+	end)
+end
+
+local function format_leaderboard(runs)
+	if not runs or #runs == 0 then
+		return "No runs recorded."
+	end
+	local lines = {}
+	for i, run in ipairs(runs) do
+		table.insert(lines, string.format("%d) %d pts / %d coins", i, run.score or 0, run.coins or 0))
+	end
+	return table.concat(lines, "\n")
+end
+
+local function update_leaderboard(self, runs)
+	local node = gui.get_node("leaderboard_list")
+	gui.set_text(node, format_leaderboard(runs))
+end
+
+function init(self)
+	self.score = 0
+	gui.set_text(gui.get_node("score_label"), "Extra Credit")
+	gui.set_text(gui.get_node("leaderboard_list"), "Awaiting runs...")
+	update_score_label(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("extra_credit_collected") then
+		self.score = self.score + (message and message.value or 1)
+		update_score_label(self)
+	elseif message_id == hash("reset_score") then
+		self.score = 0
+		update_score_label(self)
+	elseif message_id == hash("leaderboard_update") then
+		update_leaderboard(self, message and message.runs or {})
+	end
+end
+

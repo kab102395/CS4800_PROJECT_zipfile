@@ -1,0 +1,10 @@
+name: "main"
+instances {
+  id: "loader"
+  prototype: "/main/gameobjects/loader.go"
+}
+instances {
+  id: "proxy_relay"
+  prototype: "/main/gameobjects/proxy_relay.go"
+}
+scale_along_z: 0

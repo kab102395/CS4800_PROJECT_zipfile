@@ -1,0 +1,380 @@
+local net = require "main.ttt.net.client"
+
+local STATE = {
+    state = "init",
+    player_name = nil,
+    input_text = "",
+    match_id = nil,
+    board = ".........",
+    my_mark = nil,
+    my_turn = false,
+    opponent = nil,
+    polling_timer = nil,
+    available_matches = nil,
+    last_click_time = 0,  -- Prevent accidental double-clicks
+}
+
+-- Better random name generator
+local function generate_random_name()
+    -- Seed with time + a little clock jitter
+    local seed = os.time() * 1000 + math.floor((os.clock() % 1) * 1000000)
+    math.randomseed(seed)
+
+    local adjectives = {
+        "Swift","Clever","Bold","Quick","Brave","Frost","Fire","Storm","Shadow","Golden",
+        "Silver","Crimson","Azure","Emerald","Ruby","Diamond","Turbo","Neon","Cosmic","Nova"
+    }
+    local nouns = {
+        "Fox","Falcon","Tiger","Eagle","Dragon","Knight","Rogue","Wizard","Ranger","Pilot",
+        "Ninja","Samurai","Rider","Hunter","Scout","Viking","Gunner","Sprinter","Ghost","Blade"
+    }
+
+    local adj = adjectives[math.random(#adjectives)]
+    local noun = nouns[math.random(#nouns)]
+    local num = math.random(10, 9999)
+    return adj .. noun .. num
+end
+
+local function get_cell_index_dynamic(x, y)
+    -- Input coordinates come in WINDOW/SCREEN space
+    -- We need to convert to GAME space (GUI space)
+    -- The loader forces the window to 1280x720 and the render script uses that
+    
+    -- Fixed window dimensions (enforced by loader)
+    local win_w = 1280
+    local win_h = 720
+    
+    -- Game resolution that was set (same as window since no scaling)
+    local game_w = 1280
+    local game_h = 720
+    
+    -- Since loader enforces window = game size, no scaling needed
+    -- Coordinates are already in game space
+    local game_x = x
+    local game_y = y
+    
+    print("DEBUG: Click at screen (" .. x .. "," .. y .. ") = game (" .. game_x .. "," .. game_y .. ")")
+    
+    -- Check all 9 cells by their actual node positions
+    for cell_id = 0, 8 do
+        local node = gui.get_node("cell_" .. cell_id)
+        if node then
+            local pos = gui.get_position(node)
+            local size = gui.get_size(node)
+            
+            -- Calculate cell bounds (GUI uses center-based positioning)
+            local left = pos.x - (size.x / 2)
+            local right = pos.x + (size.x / 2)
+            local bottom = pos.y - (size.y / 2)
+            local top = pos.y + (size.y / 2)
+            
+            -- Check if click is within this cell's bounds
+            if game_x >= left and game_x <= right and game_y >= bottom and game_y <= top then
+                print("DEBUG: HIT: Cell " .. cell_id)
+                return cell_id
+            end
+        end
+    end
+    
+    print("DEBUG: NO HIT")
+    return nil
+end
+
+local function update_board_display()
+    for i = 0, 8 do
+        local mark = string.sub(STATE.board, i + 1, i + 1)
+        local node = gui.get_node("mark_" .. i)
+        if mark == "." then
+            gui.set_text(node, "")
+        else
+            gui.set_text(node, mark)
+        end
+    end
+end
+
+-- Parse available matches JSON into a Lua table
+local function parse_matches_response(matches_json)
+    if not matches_json then return {} end
+
+    if json and json.decode then
+        local ok, data = pcall(json.decode, matches_json)
+        if ok and data and data.matches then
+            return data.matches
+        end
+    end
+
+    -- Fallback simple pattern parse
+    local matches = {}
+    for match_id, host_name in string.gmatch(matches_json, '"matchId":"([^"]+)"[^}]-"hostName":"([^"]+)"') do
+        table.insert(matches, { matchId = match_id, hostName = host_name })
+    end
+    return matches
+end
+
+local function show_available_matches()
+    gui.set_text(gui.get_node("status"), "Loading available matches...\nPress [B] to go back")
+
+    net.get_available_matches(function(ok, matches_json)
+        if not ok then
+            gui.set_text(gui.get_node("status"), "Failed to load matches\nPress [R] to retry\nPress [B] to go back")
+            return
+        end
+
+        local matches = parse_matches_response(matches_json)
+        STATE.available_matches = matches
+
+        if #matches == 0 then
+            gui.set_text(gui.get_node("status"), "No matches available\nPress [R] to refresh\nPress [B] to go back")
+            return
+        end
+
+        local lines = { "Available Matches:" }
+        for i, match in ipairs(matches) do
+            local host = match.hostName or "Host"
+            local short_id = match.matchId and string.sub(match.matchId, 1, 8) or "unknown"
+            table.insert(lines, "[" .. i .. "] " .. host .. " (" .. short_id .. "...)")
+            if i >= 9 then break end -- map only 1-9 keys
+        end
+        table.insert(lines, "Press [1-9] to join")
+        table.insert(lines, "Press [R] to refresh")
+        table.insert(lines, "Press [B] to go back")
+
+        gui.set_text(gui.get_node("status"), table.concat(lines, "\n"))
+    end)
+end
+
+local function start_polling()
+    if STATE.polling_timer then timer.cancel(STATE.polling_timer) end
+
+    STATE.polling_timer = timer.delay(1.0, true, function()
+        if STATE.state == "playing" then
+            net.poll_game_state(function(success, data)
+                if success and data and data.hasMatch then
+                    STATE.board = data.board or STATE.board
+                    STATE.my_turn = data.yourTurn
+                    STATE.opponent = data.opponentName
+                    update_board_display()
+
+                    if data.result ~= "ongoing" then
+                        STATE.state = "ended"
+                        if string.find(data.result or "", STATE.my_mark) then
+                            gui.set_text(gui.get_node("status"), "YOU WIN!\n[R] Rematch  [L] Lobby  [Q] Quit")
+                        else
+                            gui.set_text(gui.get_node("status"), "YOU LOSE\n[R] Rematch  [L] Lobby  [Q] Quit")
+                        end
+                    elseif STATE.my_turn then
+                        gui.set_text(gui.get_node("status"), STATE.player_name .. " vs " .. (STATE.opponent or "Waiting...") .. "\nYOUR TURN - Click a cell")
+                    else
+                        gui.set_text(gui.get_node("status"), STATE.player_name .. " vs " .. (STATE.opponent or "Waiting...") .. "\nOpponent's turn...")
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+function init(self)
+    gui.set_text(gui.get_node("status"), "Enter your name and press SPACE\n(or just SPACE for random name)")
+    STATE.state = "name_input"
+    msg.post(".", "acquire_input_focus")
+end
+
+function update(self, dt)
+    if STATE.state == "name_input" then
+        return
+    end
+end
+
+function on_input(self, action_id, action)
+    -- Log all input to debug what's being received
+    if action_id then
+        print("TTT GUI on_input: action_id=" .. tostring(action_id) .. " released=" .. tostring(action.released))
+    end
+    
+    -- Name entry
+    if STATE.state == "name_input" then
+        if action_id == hash("text") then
+            if action.text and string.len(STATE.input_text) < 20 and action.text ~= " " then
+                STATE.input_text = STATE.input_text .. action.text
+                gui.set_text(gui.get_node("input_text"), STATE.input_text)
+            end
+        elseif action_id == hash("key_backspace") and action.released then
+            STATE.input_text = string.sub(STATE.input_text, 1, -2)
+            gui.set_text(gui.get_node("input_text"), STATE.input_text)
+        elseif action_id == hash("key_space") and action.released then
+            if string.len(STATE.input_text) > 0 then
+                STATE.player_name = STATE.input_text
+            else
+                STATE.player_name = generate_random_name()
+            end
+            STATE.state = "lobby"
+            gui.set_text(gui.get_node("input_text"), "")
+            gui.set_text(gui.get_node("status"), "LOBBY - " .. STATE.player_name .. "\n[C] Create Match  [J] Join Match  [S] Stats")
+            STATE.input_text = ""
+        end
+        return
+    end
+
+    -- Lobby
+    if STATE.state == "lobby" then
+        if action_id == hash("key_b") and action.released then
+            STATE.state = "name_input"
+            gui.set_text(gui.get_node("status"), "Enter your name and press SPACE\n(or just SPACE for random name)")
+            gui.set_text(gui.get_node("input_text"), "")
+            STATE.input_text = ""
+        elseif action_id == hash("key_c") and action.released then
+            STATE.state = "playing"
+            gui.set_text(gui.get_node("status"), "Creating match...")
+            net.create_match(STATE.player_name, STATE.player_name .. "'s Game", function(ok, match_id, session_id)
+                if ok then
+                    STATE.match_id = match_id
+                    STATE.my_mark = "X"
+                    STATE.my_turn = false
+                    STATE.board = "........."
+                    update_board_display()
+                    start_polling()
+                    gui.set_text(gui.get_node("status"), "Match created! Waiting for opponent...\nYou are X")
+                else
+                    gui.set_text(gui.get_node("status"), "Failed to create match\n[B] Back to lobby")
+                    STATE.state = "lobby"
+                end
+            end)
+        elseif action_id == hash("key_j") and action.released then
+            STATE.state = "joining"
+            show_available_matches()
+        elseif action_id == hash("key_s") and action.released then
+            gui.set_text(gui.get_node("status"), "Loading stats...")
+            STATE.state = "stats"
+            net.get_player_stats(STATE.player_name, function(ok, stats)
+                if ok and stats and stats.success then
+                    local total = stats.totalGames or 0
+                    local wins = stats.wins or 0
+                    local losses = stats.losses or 0
+                    local draws = stats.draws or 0
+                    local wr = stats.winRate or 0
+                    local msg = "PLAYER STATISTICS\n" ..
+                                "Player: " .. STATE.player_name .. "\n\n" ..
+                                "Games: " .. total .. "\n" ..
+                                "Wins: " .. wins .. "\n" ..
+                                "Losses: " .. losses .. "\n" ..
+                                "Draws: " .. draws .. "\n" ..
+                                "Win Rate: " .. string.format("%.1f%%", wr * 100) .. "\n\n" ..
+                                "[B] Back to lobby"
+                    gui.set_text(gui.get_node("status"), msg)
+                else
+                    gui.set_text(gui.get_node("status"), "PLAYER STATISTICS\n" ..
+                                STATE.player_name .. "\n\n" ..
+                                "Games: 0\n" ..
+                                "Wins: 0\n" ..
+                                "Losses: 0\n" ..
+                                "Draws: 0\n" ..
+                                "Win Rate: 0%\n\n" ..
+                                "[B] Back to lobby")
+                end
+            end)
+        end
+        return
+    end
+
+    -- Stats screen
+    if STATE.state == "stats" then
+        if action_id == hash("key_b") and action.released then
+            STATE.state = "lobby"
+            gui.set_text(gui.get_node("status"), "LOBBY - " .. STATE.player_name .. "\n[C] Create Match  [J] Join Match  [S] Stats")
+        end
+        return
+    end
+
+    -- Joining screen
+    if STATE.state == "joining" then
+        if action_id == hash("key_b") and action.released then
+            STATE.state = "lobby"
+            gui.set_text(gui.get_node("status"), "LOBBY - " .. STATE.player_name .. "\n[C] Create Match  [J] Join Match  [S] Stats")
+            return
+        elseif action_id == hash("key_r") and action.released then
+            show_available_matches()
+            return
+        end
+
+        for i = 1, 9 do
+            if action_id == hash("key_" .. i) and action.released then
+                local match = STATE.available_matches and STATE.available_matches[i]
+                if not match then
+                    gui.set_text(gui.get_node("status"), "No match in that slot\nPress [R] to refresh\nPress [B] to go back")
+                    return
+                end
+
+                gui.set_text(gui.get_node("status"), "Joining match " .. (match.hostName or "") .. "...")
+                net.join_specific_match(STATE.player_name, match.matchId, function(ok, match_id, session_id)
+                    if ok then
+                        STATE.match_id = match_id
+                        STATE.my_mark = "O"
+                        STATE.my_turn = false
+                        STATE.board = "........."
+                        STATE.state = "playing"
+                        update_board_display()
+                        gui.set_text(gui.get_node("status"), "Joined match! You are O - waiting for X...")
+                        start_polling()
+                    else
+                        gui.set_text(gui.get_node("status"), "Failed to join match\nPress [R] to refresh\nPress [B] to go back")
+                    end
+                end)
+                return
+            end
+        end
+        return
+    end
+
+    -- Playing / ended
+    if STATE.state == "playing" or STATE.state == "ended" then
+        if action_id == hash("key_esc") and action.released then
+            STATE.state = "lobby"
+            if STATE.polling_timer then timer.cancel(STATE.polling_timer) STATE.polling_timer = nil end
+            gui.set_text(gui.get_node("status"), "LOBBY - " .. STATE.player_name .. "\n[C] Create Match  [J] Join Match  [S] Stats")
+            for i = 0, 8 do gui.set_text(gui.get_node("mark_" .. i), "") end
+        elseif action_id == hash("touch") and STATE.state == "playing" then
+            print("DEBUG: Touch input received - action.released=" .. tostring(action.released))
+            
+            if not action.released then
+                return  -- Only process on release
+            end
+            
+            if not STATE.my_turn then
+                gui.set_text(gui.get_node("status"), "Waiting for opponent...")
+                return
+            end
+
+            -- Prevent multiple moves from a single click (cooldown)
+            local current_time = os.clock()
+            if current_time - STATE.last_click_time < 0.1 then
+                return  -- Ignore clicks within 100ms of last click
+            end
+            STATE.last_click_time = current_time
+
+            local cell = get_cell_index_dynamic(action.x, action.y)
+            if cell and string.sub(STATE.board, cell + 1, cell + 1) == "." then
+                gui.set_text(gui.get_node("status"), "Making move...")
+                net.make_move(STATE.match_id, cell, function(ok)
+                    if ok then
+                        STATE.my_turn = false
+                    else
+                        gui.set_text(gui.get_node("status"), "Invalid move - cell taken or error")
+                    end
+                end)
+            else
+                if not cell then
+                    gui.set_text(gui.get_node("status"), "Click on a board cell!")
+                else
+                    gui.set_text(gui.get_node("status"), "Cell already taken!")
+                end
+            end
+        elseif (action_id == hash("key_r") or action_id == hash("key_l")) and action.released then
+            if STATE.state == "ended" then
+                STATE.state = "lobby"
+                STATE.board = "........."
+                update_board_display()
+                gui.set_text(gui.get_node("status"), "LOBBY - " .. STATE.player_name .. "\n[C] Create Match  [J] Join Match")
+            end
+        end
+    end
+end

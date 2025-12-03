@@ -1,0 +1,47 @@
+function init(self)
+	gui.set_text(gui.get_node("score_label"), "Score: 0")
+	gui.set_text(gui.get_node("missed_label"), "Missed: 0")
+	gui.set_enabled(gui.get_node("game_over_panel"), false)
+end
+
+function on_message(self, message_id, message)
+	if message_id == hash("update_score") then
+		local score = message.score or 0
+		gui.set_text(gui.get_node("score_label"), "Score: " .. score)
+
+	elseif message_id == hash("game_over") then
+		gui.set_enabled(gui.get_node("game_over_panel"), true)
+
+		gui.set_text(gui.get_node("final_score"), "Score: " .. message.score)
+		gui.set_text(gui.get_node("missed_geese"), "Missed: " .. message.missed)
+		gui.set_text(gui.get_node("total_geese"), "Total: " .. message.total)
+		gui.set_text(gui.get_node("accuracy"), "Accuracy: " .. message.accuracy .. "%")
+
+	elseif message_id == hash("reset") then
+		gui.set_enabled(gui.get_node("game_over_panel"), false)
+		gui.set_text(gui.get_node("score_label"), "Score: 0")
+
+	elseif message_id == hash("update_missed") then
+		local missed = message.missed or 0
+		local label = gui.get_node("missed_label")
+		gui.set_text(label, "Missed: " .. missed)
+		
+	elseif message_id == hash("update_bullets") then
+		local bullets = message.bullets or 0
+		local label = gui.get_node("bullet_label")
+		gui.set_text(label, "Bullets: " .. bullets)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("shoot") and action.pressed then
+		local restart_btn = gui.get_node("restart_button")
+		if gui.pick_node(restart_btn, action.x, action.y) then
+			-- Hide the game over panel
+			gui.set_enabled(gui.get_node("game_over_panel"), false)
+
+			-- Restart the game
+			msg.post("main_controller", "restart")
+		end
+	end
+end

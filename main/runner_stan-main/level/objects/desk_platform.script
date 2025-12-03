@@ -1,0 +1,9 @@
+-- Simplified platform script placeholder
+function init(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("create_extra_credit") then
+		-- future: spawn credits
+	end
+end

@@ -1,0 +1,71 @@
+local BALL_OUT_OF_BOUNDS   = hash("ball_out_of_bounds")
+local COLLISION_RESPONSE   = hash("collision_response")
+local TOP_WALL    = hash("/top_wall")
+local BOTTOM_WALL = hash("/bottom_wall")
+local LEFT_BAR    = hash("/left_bar")
+local RIGHT_BAR   = hash("/right_bar")
+
+local object_speed = 300
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	-- Ask loader for current window width (runtime, per game)
+	msg.post("main:/loader", "request_window_width")
+
+	self.game_width   = nil
+	self.half_width   = nil
+	self.previous_other_id = nil
+
+	-- Randomize initial x direction, start moving up
+	local directions = {-1, 1}
+	local initial_direction = directions[math.random(#directions)]
+	self.direction = vmath.vector3(initial_direction, 1, 0)
+end
+
+function update(self, dt)
+	-- Lazy-load ball half width once sprite is ready
+	if not self.half_width then
+		local size = go.get("#sprite", "size")
+		if size then
+			self.half_width = size.x * 0.5
+		end
+	end
+	if not self.game_width or not self.half_width then
+		return
+	end
+
+	local speed = vmath.vector3(object_speed * self.direction.x, object_speed * self.direction.y, 0)
+	local next_pos = go.get_position() + speed * dt
+
+	-- Out-of-bounds: center-based position vs world 0..game_width
+	-- Left OOB when center < -half_width; Right OOB when center > game_width + half_width
+	if next_pos.x < -self.half_width or next_pos.x > (self.game_width + self.half_width) then
+		msg.post("controller#main_controller", BALL_OUT_OF_BOUNDS, { x = next_pos.x })
+		go.delete()
+		object_speed = 300
+		return
+	end
+
+	go.set_position(next_pos)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == COLLISION_RESPONSE then
+		local other_id = message.other_id
+		if self.previous_other_id == other_id then return end
+
+		if other_id == TOP_WALL or other_id == BOTTOM_WALL then
+			self.direction.y = -self.direction.y
+		elseif other_id == LEFT_BAR or other_id == RIGHT_BAR then
+			self.direction.x = -self.direction.x
+			object_speed = object_speed + 35
+		end
+
+		self.previous_other_id = other_id
+
+	elseif message_id == hash("window_width") then
+		-- Receive runtime width from loader
+		self.game_width = message.width
+	end
+end

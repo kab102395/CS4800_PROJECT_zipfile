@@ -1,0 +1,87 @@
+script: "/main/gameobjects/login.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 360.0
+  }
+  size {
+    x: 1280.0
+    y: 720.0
+  }
+  color {
+    x: 0.2
+    y: 0.3
+    z: 0.4
+  }
+  type: TYPE_BOX
+  id: "background"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 640.0
+    y: 500.0
+  }
+  type: TYPE_TEXT
+  text: "GooseHunt"
+  font: "default"
+  id: "title"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 640.0
+    y: 380.0
+  }
+  type: TYPE_TEXT
+  text: "Enter Username:"
+  font: "default"
+  id: "username_label"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 640.0
+    y: 300.0
+  }
+  size {
+    x: 400.0
+    y: 60.0
+  }
+  type: TYPE_BOX
+  id: "username_input"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 640.0
+    y: 180.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  color {
+    x: 0.3
+    y: 0.6
+  }
+  type: TYPE_BOX
+  id: "continue_button"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 640.0
+    y: 80.0
+  }
+  type: TYPE_TEXT
+  text: "Enter your username"
+  font: "default"
+  id: "status"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"

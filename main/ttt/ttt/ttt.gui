@@ -1,0 +1,484 @@
+script: "/main/ttt/ttt/ttt.gui_script"
+fonts {
+  name: "system_font"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 360.0
+  }
+  size {
+    x: 1280.0
+    y: 720.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.08
+    y: 0.08
+    z: 0.1
+    w: 1.0
+  }
+  id: "background"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 660.0
+  }
+  size {
+    x: 1100.0
+    y: 70.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "header_bg"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 665.0
+  }
+  size {
+    x: 1000.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "TIC-TAC-TOE"
+  font: "system_font"
+  id: "title"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+  adjust_mode: ADJUST_MODE_FIT
+}
+nodes {
+  position {
+    x: 640.0
+    y: 100.0
+  }
+  size {
+    x: 1150.0
+    y: 120.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.12
+    y: 0.12
+    z: 0.15
+    w: 1.0
+  }
+  id: "status_bg"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 100.0
+  }
+  size {
+    x: 1100.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Status"
+  font: "system_font"
+  id: "status"
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+    w: 1.0
+  }
+  adjust_mode: ADJUST_MODE_FIT
+  line_break: true
+}
+nodes {
+  position {
+    x: 640.0
+    y: 600.0
+  }
+  size {
+    x: 350.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.2
+    y: 0.2
+    z: 0.22
+    w: 1.0
+  }
+  id: "input_box"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 600.0
+  }
+  size {
+    x: 330.0
+    y: 45.0
+  }
+  type: TYPE_TEXT
+  text: "Type your name here..."
+  font: "system_font"
+  id: "input_text"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+  adjust_mode: ADJUST_MODE_FIT
+}
+nodes {
+  position {
+    x: 400.0
+    y: 480.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_0"
+}
+nodes {
+  position {
+    x: 565.0
+    y: 480.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_1"
+}
+nodes {
+  position {
+    x: 730.0
+    y: 480.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_2"
+}
+nodes {
+  position {
+    x: 400.0
+    y: 360.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_3"
+}
+nodes {
+  position {
+    x: 565.0
+    y: 360.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_4"
+}
+nodes {
+  position {
+    x: 730.0
+    y: 360.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_5"
+}
+nodes {
+  position {
+    x: 400.0
+    y: 240.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_6"
+}
+nodes {
+  position {
+    x: 565.0
+    y: 240.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_7"
+}
+nodes {
+  position {
+    x: 730.0
+    y: 240.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_BOX
+  color {
+    x: 0.15
+    y: 0.15
+    z: 0.18
+    w: 1.0
+  }
+  id: "cell_8"
+}
+nodes {
+  position {
+    x: 400.0
+    y: 480.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_0"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 565.0
+    y: 480.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_1"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 730.0
+    y: 480.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_2"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 400.0
+    y: 360.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_3"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 565.0
+    y: 360.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_4"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 730.0
+    y: 360.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_5"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 400.0
+    y: 240.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_6"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 565.0
+    y: 240.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_7"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 730.0
+    y: 240.0
+  }
+  size {
+    x: 90.0
+    y: 90.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "system_font"
+  id: "mark_8"
+  color {
+    x: 0.2
+    y: 0.8
+    z: 1.0
+    w: 1.0
+  }
+}
+material: "/builtins/materials/gui.material"

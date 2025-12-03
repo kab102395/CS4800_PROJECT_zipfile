@@ -1,0 +1,23 @@
+
+local TABLE4 = hash("/table4")
+
+
+
+
+
+function init(self)
+	
+	
+	self.table_name = "table4"
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("table_collision") then
+		if self.table_name == "table4" then
+			print("puzzle")
+			msg.post("main:/loader", "launch_game", { game = "puzzle" })
+	
+		end
+	end
+end

@@ -1,0 +1,15 @@
+-- backpack.script
+function init(self)
+	-- Store reference to hero
+	self.hero_id = msg.url("/level/hero")
+end
+
+function update(self, dt)
+	-- Get hero's position
+	local hero_pos = go.get_position(self.hero_id)
+	-- Position backpack on hero's back (relative to hero)
+	-- Adjust y value to move it up/down on the back
+	local backpack_pos = hero_pos + vmath.vector3(-10.0, 200.0, -0.1)
+	go.set_position(backpack_pos)
+end
+

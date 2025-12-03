@@ -1,0 +1,41 @@
+-- desk_platform.script
+function init(self)
+	self.speed = 540     -- Default speed in pixels/s
+	self.extra_credits = {}
+end
+
+function final(self)
+	for i,p in ipairs(self.extra_credits) do
+		go.delete(p)
+	end
+end
+
+function update(self, dt)
+	local pos = go.get_position()
+	if pos.x < -500 then
+		msg.post("/level/controller#controller", "delete_spawn", { id = go.get_id() })
+	end
+	pos.x = pos.x - self.speed * dt
+	go.set_position(pos)
+end
+
+function create_extra_credit(self, params)
+	local spacing = 56
+	local pos = go.get_position()
+	local x = pos.x - params.extra_credit * (spacing*0.5) - 24
+	for i = 1, params.extra_credit do
+		local extra_credit = factory.create("#extra_credit_factory", vmath.vector3(x + i * spacing , pos.y + 64, 1))
+		msg.post(extra_credit, "set_parent", { parent_id = go.get_id() })
+		msg.post(extra_credit, "start_animation", { delay = i/10 })
+		table.insert(self.extra_credits, extra_credit)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_speed") then
+		self.speed = message.speed
+	elseif message_id == hash("create_extra_credit") then
+		create_extra_credit(self, message)
+	end
+end
+

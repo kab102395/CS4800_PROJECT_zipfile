@@ -1,0 +1,18 @@
+animations {
+  id: "player-down"
+  images {
+    image: "/main/Quad/assets/units/infantry/down/1.png"
+  }
+  images {
+    image: "/main/Quad/assets/units/infantry/down/2.png"
+  }
+  images {
+    image: "/main/Quad/assets/units/infantry/down/3.png"
+  }
+  images {
+    image: "/main/Quad/assets/units/infantry/down/4.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 10
+}
+extrude_borders: 2

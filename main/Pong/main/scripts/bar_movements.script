@@ -1,0 +1,49 @@
+go.property("up_action", hash("left_up"))
+go.property("down_action", hash("left_down"))
+
+local object_speed = 5
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	-- Ask loader for current window height
+	msg.post("main:/loader", "request_window_height")
+
+	self.game_height = nil
+	self.object_height = nil
+end
+
+function update(self, dt)
+	if not self.object_height then
+		local size = go.get("#sprite", "size")
+		if size then
+			self.object_height = size.y
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if not self.object_height or not self.game_height then return end
+
+	local next_position = go.get_position()
+
+	if action_id == self.up_action then
+		next_position.y = math.min(
+		next_position.y + object_speed,
+		self.game_height - self.object_height / 9
+	)
+elseif action_id == self.down_action then
+	next_position.y = math.max(
+	next_position.y - object_speed,
+	self.object_height / 9
+)
+end
+
+go.set_position(next_position)
+end
+
+function on_message(self, message_id, message, sender)
+if message_id == hash("window_height") then
+self.game_height = message.height
+end
+end

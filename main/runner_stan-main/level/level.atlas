@@ -1,0 +1,8 @@
+images { image: "/images/rock.png" }
+images { image: "/images/Goose1.png" }
+images { image: "/images/Goose2.png" }
+images { image: "/images/throw.png" }
+images { image: "/images/throw2.png" }
+images { image: "/images/Background.png" }
+images { image: "/images/Background.png" }
+extrude_borders: 2

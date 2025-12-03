@@ -1,0 +1,55 @@
+local BOUNDS = vmath.vector4(0, 0, 960, 640)
+
+function init(self, props)
+	local score = props.score or 0
+	local base_speed = 160
+	local speed = base_speed + score * 1.5
+
+	local dx = math.random(-1, 1)
+	self.vel = vmath.normalize(vmath.vector3(dx, 1, 0)) * speed
+
+	self.state = "flying"
+	sprite.play_flipbook("#sprite", "flap")
+end
+
+function update(self, dt)
+	local pos = go.get_position()
+
+	if self.state == "flying" then
+		pos = pos + self.vel * dt
+		if pos.y > BOUNDS.w then
+			msg.post("main_controller#script", "goose_escaped")
+			go.delete()
+			return
+		end
+		go.set_position(pos)
+
+	elseif self.state == "falling" then
+		self.vel.y = -180
+		pos = pos + self.vel * dt
+		go.set_position(pos)
+
+		if pos.y <= 20 then
+			msg.post("main_controller#script", "goose_fell_done")
+			go.delete()
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("shoot_attempt") and self.state == "flying" then
+		local pos = go.get_position()
+		local size = vmath.vector3(150, 150, 0)
+
+		if message.x >= pos.x - size.x / 2 and message.x <= pos.x + size.x / 2 and
+		message.y >= pos.y - size.y / 2 and message.y <= pos.y + size.y / 2 then
+
+			print("Goose was hit!")
+			self.state = "falling"
+			sprite.play_flipbook("#sprite", "flap")
+			-- Flip goose upside down
+			go.set_rotation(vmath.quat_rotation_z(math.rad(180)))
+			msg.post("main_controller#script", "goose_hit_confirmed")
+		end
+	end
+end

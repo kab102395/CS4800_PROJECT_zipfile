@@ -1,0 +1,84 @@
+function init(self)
+	self.pending_width_requester  = nil
+	self.pending_height_requester = nil
+
+	-- Who wants projection_info? (the current game, i.e. puzzle)
+	self.projection_client = nil
+end
+
+function on_message(self, message_id, message, sender)
+	--------------------------------------------------------
+	-- Puzzles (or other games) register to receive projection_info
+	--------------------------------------------------------
+	if message_id == hash("register_projection_client") then
+		self.projection_client = sender
+	elseif message_id == hash("unregister_projection_client") then
+		self.projection_client = nil
+
+		--------------------------------------------------------
+		-- Render sends projection_info here; forward to client
+		--------------------------------------------------------
+	elseif message_id == hash("projection_info") then
+		if self.projection_client then
+			local ok = pcall(msg.post, self.projection_client, "projection_info", message)
+			if not ok then
+				print("WARNING: projection client missing; clearing registration")
+				self.projection_client = nil
+			end
+		end
+
+		--------------------------------------------------------
+		-- Restart
+		--------------------------------------------------------
+	elseif message_id == hash("restart") then
+		self.projection_client = nil
+		msg.post("main:/loader#loader", "restart")
+
+		--------------------------------------------------------
+		-- Loader URL
+		--------------------------------------------------------
+	elseif message_id == hash("request_loader_url") then
+		local loader_url = msg.url("main:/loader#loader")
+		msg.post(sender, "set_loader_url", { loader = loader_url })
+
+		--------------------------------------------------------
+		-- Window width request
+		--------------------------------------------------------
+	elseif message_id == hash("request_window_width") then
+		print("Relay: request_window_width → loader")
+		self.pending_width_requester = sender
+		msg.post("main:/loader#loader", "request_window_width")
+
+		--------------------------------------------------------
+		-- Window height request
+		--------------------------------------------------------
+	elseif message_id == hash("request_window_height") then
+		print("Relay: request_window_height → loader")
+		self.pending_height_requester = sender
+		msg.post("main:/loader#loader", "request_window_height")
+
+		--------------------------------------------------------
+		-- Loader replies with width
+		--------------------------------------------------------
+	elseif message_id == hash("window_width") then
+		print("Relay: got window_width from loader")
+		if self.pending_width_requester then
+			msg.post(self.pending_width_requester, "window_width", { width = message.width })
+		else
+			print("WARNING: no pending_width_requester")
+		end
+		self.pending_width_requester = nil
+
+		--------------------------------------------------------
+		-- Loader replies with height
+		--------------------------------------------------------
+	elseif message_id == hash("window_height") then
+		print("Relay: got window_height from loader")
+		if self.pending_height_requester then
+			msg.post(self.pending_height_requester, "window_height", { height = message.height })
+		else
+			print("WARNING: no pending_height_requester")
+		end
+		self.pending_height_requester = nil
+	end
+end

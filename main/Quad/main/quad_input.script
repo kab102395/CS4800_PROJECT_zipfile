@@ -1,0 +1,100 @@
+local auth = require("main.scripts.auth")
+
+function init(self)
+	print("Quad input script initialized")
+	msg.post(".", "acquire_input_focus")
+	self.username = nil
+end
+
+function on_input(self, action_id, action)
+	-- Only handle T key presses
+	if action_id == hash("key_t") and action.pressed then
+		print("Stats button pressed!")
+		open_stats_page(self)
+		return true
+	end
+	
+	-- Let other inputs pass through
+	return false
+end
+
+function open_stats_page(self)
+	-- Load username from session when button is pressed
+	local session = auth.load_session()
+	if not session or not session.username then
+		print("ERROR: No username found in session.json")
+		return
+	end
+	
+	local username = session.username
+	print("Opening stats popup for user: " .. username)
+	
+	-- Try multiple possible paths for stats HTML (launcher)
+	local possible_paths = {
+		"main/Quad/stats_launcher.html",
+		"../main/Quad/stats_launcher.html",
+		"../../main/Quad/stats_launcher.html",
+	}
+	
+	-- Get current working directory
+	local cwd = io.popen("cd"):read() or ""
+	print("Current working directory: " .. cwd)
+	
+	local stats_file = nil
+	
+	-- Try to find the file by checking each path
+	for _, path in ipairs(possible_paths) do
+		print("Checking path: " .. path)
+		local f = io.open(path, "r")
+		if f then
+			f:close()
+			stats_file = path
+			print("Found stats page at: " .. path)
+			break
+		end
+	end
+	
+	if not stats_file then
+		print("ERROR: Could not find stats page in any expected location")
+		return
+	end
+	
+	local encoded_username = username:gsub(" ", "%%20"):gsub("&", "%%26"):gsub("=", "%%3D")
+	
+	-- Convert to absolute path and create file:// URL
+	local abs_path = stats_file
+	if not abs_path:match("^/") and not abs_path:match("^[A-Z]:") then
+		-- Path is relative, try to make it absolute
+		abs_path = (cwd or ".") .. "/" .. stats_file
+	end
+	
+	-- Open React stats launcher with query + hash carrying username
+	local file_url = "file:///" .. abs_path:gsub("\\", "/") .. "?user=" .. encoded_username .. "#user=" .. encoded_username
+	
+	print("File URL: " .. file_url)
+	
+	-- Determine OS and use appropriate command
+	-- Try multiple ways to detect OS
+	local os_name = sys.get_config("defold.os")
+	if not os_name or os_name == "" then
+		-- Fallback: check for Windows-specific path separator
+		if stats_file:find("\\") or io.popen("ver"):read() then
+			os_name = "Windows"
+		else
+			os_name = "Unix"
+		end
+	end
+	
+	print("OS: " .. (os_name or "unknown"))
+	
+	if os_name == "Windows" or stats_file:find("\\") then
+		-- Windows: use cmd start to preserve query/hash in URL
+		local cmd = 'cmd /c start "" "' .. file_url .. '"'
+		print("Windows command: " .. cmd)
+		os.execute(cmd)
+	else
+		-- Mac/Linux: Use open command with -n flag for new window
+		print("Executing open command with new window...")
+		os.execute('open -n "' .. file_url .. '"')
+	end
+end

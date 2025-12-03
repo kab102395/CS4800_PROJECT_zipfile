@@ -1,0 +1,25 @@
+-- /scripts/guy.script
+
+function init(self)
+	self.state = "Idle"
+	print("Guy initialized")
+	sprite.play_flipbook("#sprite", "Idle")
+	msg.post("main_controller#script", "guy_ready")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("throw") then
+		if self.state ~= "Throw" then
+			self.state = "Throw"
+			print("Guy: playing Throw animation")
+			sprite.play_flipbook("#sprite", "Throw")
+		end
+
+	elseif message_id == hash("animation_done") then
+		if self.state == "Throw" then
+			print("Guy: returning to Idle")
+			self.state = "Idle"
+			sprite.play_flipbook("#sprite", "Idle")
+		end
+	end
+end

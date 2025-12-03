@@ -1,0 +1,9 @@
+local launched = false
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("table_collision") and not launched then
+		launched = true
+		print("Launching runner from table 6")
+		msg.post("main:/loader#loader", "launch_game", { game = "runner" })
+	end
+end

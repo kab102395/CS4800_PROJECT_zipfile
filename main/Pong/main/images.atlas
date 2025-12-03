@@ -1,0 +1,18 @@
+images {
+  image: "/main/Pong/assets/images/ball_red_large.png"
+}
+images {
+  image: "/main/Pong/assets/images/brownB.png"
+}
+images {
+  image: "/main/Pong/assets/images/background_brown.png"
+}
+images {
+  image: "/main/Pong/assets/images/greenbarcrop.png"
+  pivot_x: 0.527816
+  pivot_y: 0.516243
+}
+images {
+  image: "/main/Pong/assets/images/redbarcrop.png"
+}
+extrude_borders: 2

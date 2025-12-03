@@ -1,0 +1,23 @@
+function init(self)
+	self.speed = 4000  -- pixels per second
+	self.target = nil
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("launch") then
+		self.target = vmath.vector3(message.x, message.y, 0)
+		self.dir = vmath.normalize(self.target - go.get_position())
+	end
+end
+
+function update(self, dt)
+	if self.target then
+		local pos = go.get_position()
+		local new_pos = pos + self.dir * self.speed * dt
+		go.set_position(new_pos)
+
+		if vmath.length(self.target - new_pos) < 10 then
+			go.delete()
+		end
+	end
+end

@@ -1,0 +1,34 @@
+local auth = require("main.scripts.auth")
+
+function init(self)
+	-- set blue background
+	msg.post("@render:", "clear_color", { color = vmath.vector4(0.52, 0.80, 1, 0) } )
+	print("[Space Shooter Main] *** ACQUIRING INPUT FOCUS ***")
+	msg.post(".", "acquire_input_focus")
+	
+	-- Load user session for score submission
+	local session = auth.load_session()
+	self.username = session and session.username or "Guest"
+	print("[Space Shooter Main] Init complete. Username: " .. self.username)
+end
+
+function update(self, dt)
+	-- Nothing needed
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("ok") and action.pressed then
+		print('OK')
+		return false
+	elseif action_id == hash("key_esc") and action.pressed then
+		-- Tell GUI to submit score and return to Quad
+		print("[Space Shooter Main] *** ESC KEY DETECTED ***")
+		print("[Space Shooter Main] Sending submit_and_exit to GUI")
+		msg.post("/main#gui", "submit_and_exit")
+		return true  -- Consume the ESC input
+	elseif action_id == hash("profiler_toggle") and action.pressed then
+		msg.post("@system:", "toggle_profile")
+		return true
+	end
+	return false
+end

@@ -1,0 +1,40 @@
+name: "game"
+instances {
+  id: "guy"
+  prototype: "/main/gameobjects/ghgameobjects/guy.go"
+  position {
+    x: 309.0
+    y: 165.0
+  }
+  scale3 {
+    x: 0.7
+    y: 0.7
+    z: 0.8
+  }
+}
+instances {
+  id: "background"
+  prototype: "/main/gameobjects/ghgameobjects/background.go"
+  position {
+    x: 480.0
+    y: 320.0
+    z: -1.0
+  }
+}
+instances {
+  id: "bush"
+  prototype: "/main/gameobjects/ghgameobjects/bush.go"
+  position {
+    x: 480.0
+    y: 320.0
+  }
+}
+instances {
+  id: "hud"
+  prototype: "/main/gameobjects/ghgameobjects/hud.go"
+}
+instances {
+  id: "main_controller"
+  prototype: "/main/gameobjects/main_controller.go"
+}
+scale_along_z: 0

@@ -1,0 +1,5 @@
+-- /scripts/background.script
+
+function init(self)
+	go.set_position(vmath.vector3(480, 320, 0))  -- Centered for 960x640
+end

@@ -1,0 +1,83 @@
+function init(self)
+	self.clear_color = vmath.vector4(0, 0, 0, 1)
+
+	-- Predicates must match material tags
+	self.pred_tile     = render.predicate({ "tile" })
+	self.pred_sprite   = render.predicate({ "sprite" })
+	self.pred_particle = render.predicate({ "particle" })
+	self.pred_label    = render.predicate({ "label" })
+	self.pred_gui      = render.predicate({ "gui" })
+
+	-- Default target resolution (used by loader)
+	self.game_width  = 512
+	self.game_height = 640
+end
+
+function update(self)
+	local win_w = render.get_window_width()
+	local win_h = render.get_window_height()
+
+	-- Scale to fit: stretch to fill window while maintaining aspect ratio
+	-- Calculate scale factors for width and height
+	local scale_x = win_w / self.game_width
+	local scale_y = win_h / self.game_height
+	
+	-- Use the minimum scale to fit the entire game (letterbox/pillarbox)
+	local scale = math.min(scale_x, scale_y)
+	
+	-- Calculate the actual viewport dimensions based on scale
+	local viewport_w = self.game_width * scale
+	local viewport_h = self.game_height * scale
+	
+	-- Center the viewport on the window
+	local viewport_x = (win_w - viewport_w) / 2
+	local viewport_y = (win_h - viewport_h) / 2
+
+	render.set_viewport(math.floor(viewport_x), math.floor(viewport_y), math.floor(viewport_w), math.floor(viewport_h))
+
+	-- World projection - use game resolution directly
+	render.set_projection(vmath.matrix4_orthographic(0, self.game_width, 0, self.game_height, -1, 1))
+
+	-- ✅ Send projection info to the proxy relay
+	msg.post("main:/proxy_relay#script", "projection_info", {
+		left   = 0,
+		right  = self.game_width,
+		bottom = 0,
+		top    = self.game_height,
+		width  = self.game_width,
+		height = self.game_height,
+		win_w  = win_w,
+		win_h  = win_h,
+	})
+
+	-- Clear buffer
+	render.clear({
+		[render.BUFFER_COLOR_BIT] = self.clear_color,
+		[render.BUFFER_DEPTH_BIT] = 1.0
+	})
+
+	render.enable_state(render.STATE_BLEND)
+	render.disable_state(render.STATE_DEPTH_TEST)
+	render.set_depth_mask(false)
+	render.set_blend_func(render.BLEND_SRC_ALPHA, render.BLEND_ONE_MINUS_SRC_ALPHA)
+
+	-- Draw world
+	render.draw(self.pred_tile)
+	render.draw(self.pred_sprite)
+	render.draw(self.pred_particle)
+	render.draw(self.pred_label)
+
+	-- GUI uses full game resolution (0 to game_width, 0 to game_height)
+	-- GUI is not affected by world viewport, it always fills the render space
+	render.set_view(vmath.matrix4())
+	render.set_projection(vmath.matrix4_orthographic(0, self.game_width, 0, self.game_height, -1, 1))
+	render.draw(self.pred_gui)
+end
+
+function on_message(self, message_id, message)
+	if message_id == hash("set_resolution") then
+		self.game_width  = message.width
+		self.game_height = message.height
+		print("Render script updated resolution:", self.game_width, self.game_height)
+	end
+end

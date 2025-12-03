@@ -1,0 +1,229 @@
+local goose_proxy  = msg.url("main:/loader#game_proxy")
+local quad_proxy   = msg.url("main:/loader#quad_proxy")
+local pong_proxy   = msg.url("main:/loader#pong_proxy")
+local puzzle_proxy = msg.url("main:/loader#puzzle_proxy")
+local space_shooter_proxy = msg.url("main:/loader#space_shooter_proxy")
+local ttt_proxy = msg.url("main:/loader#ttt_proxy")
+local runner_proxy = msg.url("main:/loader#runner_proxy")
+local login_proxy = msg.url("main:/loader#login_proxy")
+
+----------------------------------------------------------------
+-- Helper: cleanup all timers and resources
+----------------------------------------------------------------
+local function cleanup_all(self)
+	if self.size_enforcer then
+		timer.cancel(self.size_enforcer)
+		self.size_enforcer = nil
+	end
+end
+
+----------------------------------------------------------------
+-- Helper: apply logical size -> OS window size (with DPI)
+----------------------------------------------------------------
+local function apply_window_size(self)
+	-- Logical resolution (what render + games use)
+	local game_w = self.game_width
+	local game_h = self.game_height
+
+	-- Set the OS window to the exact logical size to avoid DPI/scale mismatches
+	window.set_size(game_w, game_h)
+	
+	-- Small delay to ensure OS processes the size change
+	timer.delay(0.05, false, function()
+		window.set_size(game_w, game_h)
+	end)
+
+	-- Tell render script to use the logical resolution
+	msg.post("@render:", "resize",        { width = game_w, height = game_h })
+	msg.post("@render:", "set_resolution",{ width = game_w, height = game_h })
+end
+
+----------------------------------------------------------------
+-- Init
+----------------------------------------------------------------
+function init(self)
+	print("Loader script running")
+
+	-- Start with login screen
+	self.active_proxy = login_proxy
+	self.next_proxy   = nil
+	self.user_id = nil
+	self.username = nil
+
+	-- Login screen uses same resolution as quad (doesn't matter, just for sizing)
+	self.game_width  = 1000
+	self.game_height = 1536
+
+	-- Apply initial window + render size
+	apply_window_size(self)
+
+	-- Periodically enforce window size in case the OS/user resizes the window
+	self.size_enforcer = timer.delay(0.2, true, function()
+		local win_w, win_h = window.get_size()
+		if math.abs(win_w - self.game_width) > 2 or math.abs(win_h - self.game_height) > 2 then
+			apply_window_size(self)
+		end
+	end)
+
+	-- Load first proxy (login screen)
+	msg.post(self.active_proxy, "load")
+
+	-- Loader always has input focus so it can handle global hotkeys (ESC/Q)
+	msg.post(".", "acquire_input_focus")
+end
+
+----------------------------------------------------------------
+-- Messages
+----------------------------------------------------------------
+function on_message(self, message_id, message, sender)
+	if message_id == hash("proxy_loaded") then
+		print("Proxy loaded — enabling")
+		msg.post(sender, "enable")
+
+		-- Ensure window size matches the active game's logical resolution
+		apply_window_size(self)
+
+		-- Send *logical* resolution to proxy_relay (used by games)
+		msg.post("main:/proxy_relay#script", "window_width",  { width  = self.game_width })
+		msg.post("main:/proxy_relay#script", "window_height", { height = self.game_height })
+
+	elseif message_id == hash("proxy_unloaded") then
+		print("Proxy fully unloaded — loading next proxy")
+
+		if self.next_proxy then
+			-- Make sure window + render use current logical size
+			apply_window_size(self)
+			msg.post(self.next_proxy, "load")
+
+			self.active_proxy = self.next_proxy
+			self.next_proxy   = nil
+		end
+
+	elseif message_id == hash("user_authenticated") then
+		print("User authenticated: " .. message.username .. " (ID: " .. message.user_id .. ")")
+		self.user_id = message.user_id
+		self.username = message.username
+		
+		-- Transition to Quad (or could show game menu here)
+		self.game_width  = 1000
+		self.game_height = 1536
+		self.next_proxy  = quad_proxy
+		apply_window_size(self)
+		msg.post(self.active_proxy, "disable")
+		msg.post(self.active_proxy, "unload")
+		
+	elseif message_id == hash("show_game_menu") then
+		print("Showing game menu (would go to game selection screen)")
+		-- For now just transition to Quad
+		self.game_width  = 1000
+		self.game_height = 1536
+		self.next_proxy  = quad_proxy
+		apply_window_size(self)
+		msg.post(self.active_proxy, "disable")
+		msg.post(self.active_proxy, "unload")
+
+	elseif message_id == hash("restart") then
+		print("Restart requested — unloading proxy")
+		if self.active_proxy then
+			self.next_proxy = self.active_proxy  -- reload the same proxy
+			msg.post(self.active_proxy, "disable")
+			msg.post(self.active_proxy, "unload")
+		end
+
+	elseif message_id == hash("request_loader_url") then
+		msg.post(sender, "set_loader_url", { loader = msg.url() })
+
+	elseif message_id == hash("request_window_width") then
+		print("Loader received request_window_width — responding with", self.game_width)
+		msg.post(sender, "window_width", { width = self.game_width })
+
+	elseif message_id == hash("request_window_height") then
+		msg.post(sender, "window_height", { height = self.game_height })
+
+	elseif message_id == hash("launch_game") then
+		local game = message.game
+		local new_proxy = nil
+
+		-- Logical width/height for each game
+		local gw, gh = 0, 0
+		if game == "quad" then
+			gw, gh = 1000, 1536
+			new_proxy = quad_proxy
+		elseif game == "goose" then
+			gw, gh = 960, 640
+			new_proxy = goose_proxy
+		elseif game == "pong" then
+			gw, gh = 1580, 1024
+			new_proxy = pong_proxy
+		elseif game == "puzzle" then
+			gw, gh = 512, 512
+			new_proxy = puzzle_proxy
+		elseif game == "space_shooter" then
+			gw, gh = 1280, 720
+			new_proxy = space_shooter_proxy
+		elseif game == "runner" then
+			gw, gh = 1280, 720
+			new_proxy = runner_proxy
+		elseif game == "ttt" or game == "tic tac toe" or game == "tictactoe" then
+			gw, gh = 1280, 720
+			new_proxy = ttt_proxy
+		end
+
+		if new_proxy and new_proxy ~= self.active_proxy then
+			print("Switching to game:", game)
+
+			self.game_width  = gw
+			self.game_height = gh
+			self.next_proxy  = new_proxy
+
+			-- Resize window + update render to new logical size
+			apply_window_size(self)
+
+			-- Unload current proxy
+			msg.post(self.active_proxy, "disable")
+			msg.post(self.active_proxy, "unload")
+		end
+	end
+end
+
+----------------------------------------------------------------
+-- Input - Global hotkeys (ESC/Q to return/exit)
+-- Returns false to let input pass to active proxy for text input etc
+----------------------------------------------------------------
+function on_input(self, action_id, action)
+	-- Only intercept ESC for game switching
+	if action_id == hash("key_esc") and action.pressed then
+		if self.active_proxy == quad_proxy then
+			-- Already on Quad - exit the entire game
+			print("Exiting Quad and entire game...")
+			cleanup_all(self)
+			
+			if self.active_proxy then
+				msg.post(self.active_proxy, "disable")
+				msg.post(self.active_proxy, "unload")
+			end
+			
+			-- Exit the application
+			timer.delay(0.1, false, function()
+				os.exit(0, true)
+			end)
+		else
+			-- Return to Quad
+			print("Returning to Quad...")
+			self.game_width  = 1000
+			self.game_height = 1536
+			self.next_proxy  = quad_proxy
+			
+			-- Resize window
+			apply_window_size(self)
+			
+			-- Unload current proxy
+			msg.post(self.active_proxy, "disable")
+			msg.post(self.active_proxy, "unload")
+		end
+		return true  -- Consume ESC so proxy doesn't get it
+	end
+	
+	-- All other input passes through to the proxy (including text input)
+	return false
+end

@@ -1,0 +1,22 @@
+
+local TABLE3 = hash("/table3")
+
+
+
+
+
+function init(self)
+
+	self.table_name = "table3"
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("table_collision") then
+		
+		if self.table_name == "table3" then
+			print("tic tac toe")
+			msg.post("main:/loader", "launch_game", { game = "tic tac toe" })
+		end
+	end
+end

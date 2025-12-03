@@ -1,0 +1,230 @@
+local net = require "main.ttt.net.client"
+
+-- Game state
+local game = {
+    player_name = nil,
+    match_id = nil,
+    session_id = nil,
+    board = "........." ,
+    my_mark = nil,
+    my_turn = false,
+    opponent_name = nil,
+    result = nil,
+    game_state = "name_input",
+    game_result = nil,
+    polling_timer = nil,
+}
+
+-- Update board display on GUI
+function update_board_display(board)
+    for i = 0, 8 do
+        local ch = string.sub(board, i + 1, i + 1)
+        local mark_node = "mark_" .. i
+        if ch == "." then
+            gui.set_text(gui.get_node(mark_node), "")
+        else
+            gui.set_text(gui.get_node(mark_node), ch)
+            gui.set_scale(gui.get_node(mark_node), vmath.vector3(3, 3, 1))
+        end
+    end
+end
+
+-- Convert GUI click coordinates to cell index
+function get_cell_from_click(x, y)
+    -- GUI coordinates: bottom-left origin, flip Y
+    local gui_y = 720 - y
+    
+    -- Board spans from 490-690 (x) and 310-510 (y)
+    -- Each cell is 100x100
+    local col = math.floor((x - 490) / 100)
+    local row = math.floor((gui_y - 310) / 100)
+    
+    if col < 0 or col > 2 or row < 0 or row > 2 then
+        return nil
+    end
+    
+    -- Convert row/col to cell index (0-8)
+    return row * 3 + col
+end
+
+function init(self)
+    game = {
+        player_name = nil,
+        match_id = nil,
+        session_id = nil,
+        board = ".........",
+        my_mark = nil,
+        my_turn = false,
+        opponent_name = nil,
+        result = nil,
+        game_state = "name_input",
+        game_result = nil,
+        polling_timer = nil,
+    }
+    
+    gui.set_text(gui.get_node("status"), "Enter your player name and press ENTER")
+end
+
+function update(self, dt)
+    -- Don't process game input during name input
+    if game.game_state == "name_input" then
+        return
+    end
+end
+
+function on_input(self, action_id, action)
+    if game.game_state == "name_input" then
+        if action_id == hash("key_enter") and action.released then
+            local name = "Player_" .. math.random(1000, 9999)
+            game.player_name = name
+            game.game_state = "lobby"
+            
+            gui.set_text(gui.get_node("status"), "🏪 LOBBY - " .. name .. "\nPress [C] to create match\nPress [J] to join match")
+            
+        elseif action_id == hash("text") and action.released then
+            -- Capture text input here if needed
+        end
+        return
+    end
+    
+    -- Lobby state - create/join/stats
+    if game.game_state == "lobby" then
+        if action_id == hash("key_c") and action.released then
+            game.game_state = "creating"
+            gui.set_text(gui.get_node("status"), "Creating match...")
+            
+            net.create_match(game.player_name, function(success, match_id, session_id)
+                if success then
+                    game.match_id = match_id
+                    game.session_id = session_id
+                    game.game_state = "playing"
+                    game.my_mark = "X"
+                    game.my_turn = false
+                    game.result = "ongoing"
+                    
+                    gui.set_text(gui.get_node("status"), "🎮 Match created! Waiting for opponent...\nYou are X")
+                    start_polling()
+                else
+                    gui.set_text(gui.get_node("status"), "❌ Failed to create match\nPress [C] to retry")
+                    game.game_state = "lobby"
+                end
+            end)
+            
+        elseif action_id == hash("key_j") and action.released then
+            game.game_state = "joining"
+            gui.set_text(gui.get_node("status"), "Loading available matches...")
+            
+            net.get_available_matches(function(success, matches_json)
+                if success and matches_json then
+                    gui.set_text(gui.get_node("status"), "Available matches:\nPress 1-9 to join\nPress [B] to go back")
+                    game.available_matches = matches_json
+                else
+                    gui.set_text(gui.get_node("status"), "No matches available\nPress [C] to create one")
+                    game.game_state = "lobby"
+                end
+            end)
+        end
+        return
+    end
+    
+    -- Playing state - handle board clicks
+    if game.game_state == "playing" then
+        if action_id == hash("touch") and action.released then
+            if not game.my_turn or game.result ~= "ongoing" then
+                if not game.my_turn then
+                    gui.set_text(gui.get_node("status"), "⌛ Wait for your turn!")
+                end
+                return
+            end
+            
+            local cell_idx = get_cell_from_click(action.x, action.y)
+            if cell_idx then
+                local cell_mark = string.sub(game.board, cell_idx + 1, cell_idx + 1)
+                if cell_mark == "." then
+                    gui.set_text(gui.get_node("status"), "Making move...")
+                    
+                    net.make_move(game.match_id, cell_idx, function(success)
+                        if success then
+                            gui.set_text(gui.get_node("status"), "✅ Move sent! Waiting for opponent...")
+                            game.my_turn = false
+                        else
+                            gui.set_text(gui.get_node("status"), "❌ Invalid move - try another cell")
+                        end
+                    end)
+                else
+                    gui.set_text(gui.get_node("status"), "❌ Cell already taken!")
+                end
+            end
+        end
+        
+        if action_id == hash("key_esc") and action.released then
+            game.game_state = "lobby"
+            gui.set_text(gui.get_node("status"), "🏪 LOBBY - " .. game.player_name)
+            if game.polling_timer then
+                timer.cancel(game.polling_timer)
+                game.polling_timer = nil
+            end
+        end
+        return
+    end
+    
+    -- Joining state - number key selection
+    if game.game_state == "joining" then
+        if action_id == hash("key_b") and action.released then
+            game.game_state = "lobby"
+            gui.set_text(gui.get_node("status"), "🏪 LOBBY - " .. game.player_name)
+        end
+    end
+end
+
+function start_polling()
+    if game.polling_timer then
+        timer.cancel(game.polling_timer)
+    end
+    
+    game.polling_timer = timer.delay(1.0, true, function()
+        if game.game_state == "playing" then
+            net.poll_game_state(function(success, game_state)
+                if success and game_state then
+                    if game_state.hasMatch then
+                        game.board = game_state.board or game.board
+                        game.my_turn = game_state.yourTurn or false
+                        game.my_mark = game_state.yourMark or game.my_mark
+                        game.result = game_state.result or "ongoing"
+                        game.opponent_name = game_state.opponentName or "Opponent"
+                        
+                        update_board_display(game.board)
+                        
+                        if game.my_turn then
+                            gui.set_text(gui.get_node("status"), "🎮 " .. game.player_name .. " vs " .. game.opponent_name .. "\n✨ Your turn! Click a cell")
+                        else
+                            gui.set_text(gui.get_node("status"), "🎮 " .. game.player_name .. " vs " .. game.opponent_name .. "\n⏳ Opponent's turn...")
+                        end
+                        
+                        if game.result ~= "ongoing" then
+                            game.game_state = "game_ended"
+                            if string.find(game.result, "wins") then
+                                if string.find(game.result, game.my_mark) then
+                                    gui.set_text(gui.get_node("status"), "🎉 YOU WIN!\n[R] Play Again\n[L] Back to Lobby")
+                                else
+                                    gui.set_text(gui.get_node("status"), "😞 YOU LOSE\n[R] Play Again\n[L] Back to Lobby")
+                                end
+                            else
+                                gui.set_text(gui.get_node("status"), "🤝 DRAW!\n[R] Play Again\n[L] Back to Lobby")
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if game.polling_timer then
+                timer.cancel(game.polling_timer)
+                game.polling_timer = nil
+            end
+        end
+    end)
+end
+
+function on_message(self, message_id, message)
+    -- Handle any messages from other parts of the system
+end

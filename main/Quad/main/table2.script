@@ -1,0 +1,19 @@
+
+local TABLE2 = hash("/table2")
+ 
+
+
+function init(self)
+	
+	self.table_name = "table2"
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("table_collision") then
+		if self.table_name == "table2" then
+			print("goose hunt")
+			msg.post("main:/loader", "launch_game", { game = "goose" })
+		end
+	end
+end

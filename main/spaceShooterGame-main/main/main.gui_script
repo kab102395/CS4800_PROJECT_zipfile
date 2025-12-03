@@ -1,0 +1,86 @@
+local auth = require("main.scripts.auth")
+local game_stats = require("main.scripts.game_stats")
+
+function init(self)
+	self.score = 0
+	self.score_node = gui.get_node("score")
+	self.is_game_over = false
+	self.game_over_node = gui.get_node("game_over")
+	gui.set_enabled(self.game_over_node, false)
+	
+	-- Load user session for score submission
+	local session = auth.load_session()
+	self.username = session and session.username or "Guest"
+	
+	-- Initialize game stats tracker
+	self.stats = game_stats.new("space")
+	self.game_start_time = socket.gettime()
+	self.score_submitted = false  -- Track if we already submitted
+end
+
+local function scale_down(self, node)
+	local s = 1.0
+	gui.animate(node, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.05)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_score") then
+		local s = 1.2
+		self.score = self.score + message.amount
+		if self.is_game_over == true then -- stops score from appending when game over gui is shown
+			return
+		end
+		gui.set_text(self.score_node, tostring(self.score))
+		gui.animate(self.score_node, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.1, 0.0, scale_down)
+		print("[Space Shooter GUI] Score: " .. self.score)
+	elseif message_id == hash("submit_and_exit") then
+		-- ESC key pressed - submit current score and exit
+		if not self.score_submitted then
+			self.score_submitted = true
+			print("[Space Shooter GUI] *** SUBMIT_AND_EXIT MESSAGE RECEIVED ***")
+			print("[Space Shooter GUI] Current score to submit: " .. self.score)
+			print("[Space Shooter GUI] Username: " .. (self.username or "nil"))
+			-- Immediate submission with better error handling
+			if self.username and self.username ~= "Guest" then
+				print("[Space Shooter GUI] *** SUBMITTING SCORE IMMEDIATELY ***")
+				print("[Space Shooter GUI] Score value: " .. tostring(self.score))
+				auth.submit_score(self.username, "space", self.score, 1, function(success, response)
+					print("[Space Shooter GUI] *** SUBMISSION CALLBACK FIRED ***")
+					if success then
+						print("[Space Shooter GUI] ✓ SCORE SUBMISSION SUCCESSFUL")
+						print("[Space Shooter GUI] Response: " .. tostring(response))
+					else
+						print("[Space Shooter GUI] ✗ SCORE SUBMISSION FAILED")
+						print("[Space Shooter GUI] Error: " .. tostring(response and response.error or "unknown"))
+					end
+				end)
+			else
+				print("[Space Shooter GUI] ✗ NOT submitting - invalid username: " .. tostring(self.username))
+			end
+			-- Wait 5 seconds to guarantee async queue processes and HTTP callback completes
+			-- (HTTP timeout is 120s but we wait conservatively to ensure all retries complete)
+			timer.delay(5.0, false, function()
+				print("[Space Shooter GUI] *** RETURNING TO QUAD ***")
+				msg.post("main:/loader#loader", "load_game", {game = "quad"})
+			end)
+		end
+	else
+		print("[Space Shooter GUI] Received unknown message: " .. tostring(message_id))
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash('mouse_click') then
+		self.is_game_over = false
+		gui.set_enabled(self.game_over_node, false)
+		self.score = 0
+		gui.set_text(self.score_node, "0")
+		self.score_submitted = false
+		
+		-- Reset stats for new game
+		self.stats = game_stats.new("space")
+		self.game_start_time = socket.gettime()
+		
+		msg.post("spaceship#script", "resume_controls") -- when clicked to restart, resumes ship input
+	end
+end

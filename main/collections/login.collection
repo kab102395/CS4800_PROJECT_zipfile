@@ -1,0 +1,5 @@
+name: "login"
+instances {
+  id: "login"
+  prototype: "/main/gameobjects/login.go"
+}

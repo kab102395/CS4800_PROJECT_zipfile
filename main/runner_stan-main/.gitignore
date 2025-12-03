@@ -1,0 +1,31 @@
+# Defold build files
+build/
+*.dmanifest
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Database files (if you want to exclude)
+*.db
+*.sqlite
+
+# Java build files (backend)
+backend/.gradle/
+backend/build/
+backend/.classpath
+backend/.project
+backend/.settings/
+
+# Node modules (if any)
+node_modules/

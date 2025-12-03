@@ -1,0 +1,61 @@
+script: "/main/Pong/main/main_gui.gui_script"
+fonts {
+  name: "score_font"
+  font: "/main/Pong/main/assets/score_font.font"
+}
+nodes {
+  position {
+    x: 100.0
+    y: 951.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "0\n"
+  ""
+  font: "score_font"
+  id: "left_score"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1144.0
+    y: 951.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "0\n"
+  ""
+  font: "score_font"
+  id: "right_score"
+  xanchor: XANCHOR_RIGHT
+  yanchor: YANCHOR_TOP
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 698.0
+    y: 441.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Game over"
+  font: "score_font"
+  id: "game_over"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  inherit_alpha: true
+  enabled: false
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_DISABLED

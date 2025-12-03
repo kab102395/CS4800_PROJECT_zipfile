@@ -1,0 +1,19 @@
+images {
+  image: "/main/Quad/assets/buildings/tables/table1.png"
+}
+images {
+  image: "/main/Quad/assets/buildings/tables/table2.png"
+}
+images {
+  image: "/main/Quad/assets/buildings/tables/table3.png"
+}
+images {
+  image: "/main/Quad/assets/buildings/tables/table4.png"
+}
+images {
+  image: "/main/Quad/assets/buildings/tables/table5.png"
+}
+images {
+  image: "/main/Quad/assets/buildings/tables/table6.png"
+}
+extrude_borders: 2

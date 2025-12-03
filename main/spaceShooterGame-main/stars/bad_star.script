@@ -1,0 +1,28 @@
+local speed = -350
+local amplitude = 100
+local frequency = 2
+
+function init(self)
+	self.time = 0
+	self.start_y = go.get_position().y
+	-- Random penalty between -2000 and -10000
+	self.score = math.random(2000, 10000) * -1
+end
+
+function update(self, dt)
+	self.time = self.time + dt
+	local p = go.get_position()
+	p.x = p.x + speed * dt
+	p.y = self.start_y + math.sin(self.time * frequency) * amplitude --make star move in a wave motion
+	if p.x < -32 then
+		go.delete()
+	end
+	go.set_position(p)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("collision_response") then
+		msg.post("/main#gui", "add_score", {amount = self.score})
+		go.delete()
+	end
+end

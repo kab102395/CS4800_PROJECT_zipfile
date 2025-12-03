@@ -1,0 +1,249 @@
+local SCREEN_WIDTH = 960
+local SCREEN_HEIGHT = 640
+
+local auth = require("main.scripts.auth")
+local game_stats = require("main.scripts.game_stats")
+local function spawn_geese(self)
+	if self.game_over then return end
+
+	self.goose_ids = {}
+	self.active_geese = self.goose_count
+	self.bullets = self.goose_count
+
+	for i = 1, self.goose_count do
+		local x = math.random(80, SCREEN_WIDTH - 80)
+		local y = math.random(60, SCREEN_HEIGHT / 2)
+		local id = factory.create("#goose_factory", vmath.vector3(x, y, 0), vmath.quat(), { score = self.score })
+		table.insert(self.goose_ids, id)
+	end
+
+	msg.post("hud#gui", "update_bullets", { bullets = self.bullets })
+end
+
+local function remove_goose(self, id)
+	for i, goose_id in ipairs(self.goose_ids) do
+		if goose_id == id then
+			table.remove(self.goose_ids, i)
+			break
+		end
+	end
+end
+
+function init(self)
+	print("Game restarted - init() triggered")
+	self.game_over = false
+	self.guy_ready = false
+	self.has_projection = false
+	self.left, self.right, self.bottom, self.top = 0, 0, 0, 0
+	self.win_w, self.win_h = 0, 0
+
+	msg.post(".", "acquire_input_focus")
+	msg.post("hud#gui", "acquire_input_focus")
+	msg.post("hud#gui", "reset")
+
+	self.score = 0
+	self.goose_count = 1
+	self.goose_ids = {}
+	self.active_geese = 0
+	self.missed_geese = 0
+	self.max_misses = 5
+	self.bullets = self.goose_count
+	
+	-- Load user session for score submission
+	local session = auth.load_session()
+	self.username = session and session.username or "Guest"
+	
+	-- Initialize game stats tracker
+	self.stats = game_stats.new("goose")
+	
+	-- Track shots for accuracy
+	self.total_shots = 0
+	self.accurate_shots = 0
+
+	spawn_geese(self)
+
+	timer.delay(0.1, false, function()
+		msg.post("hud#gui", "update_score", { score = self.score })
+		msg.post("hud#gui", "update_bullets", { bullets = self.bullets })
+	end)
+
+	timer.delay(0.3, false, function()
+		msg.post("main:/proxy_relay#script", "request_loader_url")
+	end)
+
+	msg.post("main:/proxy_relay#script", "register_projection_client")
+end
+
+function final(self)
+	msg.post("main:/proxy_relay#script", "unregister_projection_client")
+end
+
+function on_input(self, action_id, action)
+	if self.game_over or not self.guy_ready then
+		print("Input blocked — game over or guy not ready")
+		return
+	end
+
+	if action_id == hash("shoot") and action.pressed then
+		-- Map screen -> world using current projection when available
+		local sx = action.screen_x or action.x
+		local sy = action.screen_y or action.y
+		local gx, gy = sx, sy
+		if self.has_projection and self.win_w > 0 and self.win_h > 0 then
+			gx = self.left   + (sx / self.win_w) * (self.right - self.left)
+			gy = self.bottom + (sy / self.win_h) * (self.top   - self.bottom)
+		end
+
+		print(string.format("Shoot at screen %.1f,%.1f -> world %.1f,%.1f", sx, sy, gx, gy))
+
+		if self.bullets > 0 then
+			self.bullets = self.bullets - 1
+			msg.post("hud#gui", "update_bullets", { bullets = self.bullets })
+			msg.post("guy#script", "throw")
+
+			local guy_pos = go.get_position("guy")
+			local projectile_id = factory.create("guy#projectile_factory", guy_pos)
+			msg.post(projectile_id, "launch", { x = gx, y = gy })
+
+			-- Track shot fired
+			self.total_shots = self.total_shots + 1
+
+			-- Explosion on click
+			local explosion_pos = vmath.vector3(gx, gy, 1)
+			factory.create("#explosion_factory", explosion_pos)
+
+			for i = #self.goose_ids, 1, -1 do
+				local id = self.goose_ids[i]
+				local ok, pos = pcall(go.get_position, id)
+
+				if ok and pos then
+					msg.post(id, "shoot_attempt", { x = gx, y = gy })
+				else
+					print("Removing dead goose:", id)
+					table.remove(self.goose_ids, i)
+				end
+			end
+		else
+			print("Out of bullets!")
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("goose_hit_confirmed") then
+		self.score = self.score + 500
+		print("Goose hit! Score:", self.score)
+		
+		-- Track accurate shot
+		self.accurate_shots = self.accurate_shots + 1
+
+		self.goose_count = math.min(1 + math.floor(self.score / 2000), 100)
+
+		timer.delay(0.1, false, function()
+			msg.post("hud#gui", "update_score", { score = self.score })
+		end)
+
+	elseif message_id == hash("goose_escaped") then
+		remove_goose(self, sender)
+		self.active_geese = self.active_geese - 1
+		self.missed_geese = self.missed_geese + 1
+		print("Goose missed! Total missed:", self.missed_geese)
+		msg.post("hud#gui", "update_missed", { missed = self.missed_geese })
+
+		if self.missed_geese >= self.max_misses then
+			self.game_over = true
+			
+			-- Calculate final stats
+			local total_geese = self.score / 500 + self.missed_geese
+			local accuracy = math.floor((self.score / 500) / total_geese * 100)
+			
+			-- Populate game stats and submit
+			self.stats:set_score(self.score)
+			self.stats:set_level(self.goose_count)
+			self.stats:add_kill(self.score / 500)
+			self.stats:add_shot_fired(self.total_shots)
+			self.stats:add_shot_hit(self.accurate_shots)
+			self.stats:finalize()
+			
+			local summary = self.stats:get_summary()
+			print("[Goose Hunt] Game Over - Score:", self.score, "Accuracy:", accuracy .. "%")
+			
+			-- Submit score asynchronously if user is logged in
+			if self.username and self.username ~= "Guest" then
+				print("[Goose Hunt] *** SUBMITTING SCORE IMMEDIATELY ***")
+				auth.submit_score(self.username, "goose", self.score, self.goose_count, function(result)
+					if result then
+						print("[Goose Hunt] Score submitted successfully")
+					else
+						print("[Goose Hunt] Score submission queued (will retry)")
+					end
+				end)
+			end
+			
+			msg.post("hud#gui", "game_over", {
+				score = self.score,
+				missed = self.missed_geese,
+				total = total_geese,
+				accuracy = accuracy
+			})
+			
+			-- IMPORTANT: Wait 5 seconds before returning to allow HTTP callback to complete
+			-- HTTP timeout is 120s, and we have retry logic, so must wait for it to finish
+			-- This is the same pattern used in Space Shooter, but with longer wait to ensure delivery
+			timer.delay(5.0, false, function()
+				if self.loader_url then
+					print("[Goose Hunt] *** RETURNING TO QUAD ***")
+					msg.post(self.loader_url, "restart")
+				else
+					print("[Goose Hunt] Loader URL not set — cannot restart")
+				end
+			end)
+			return
+		end
+
+		if self.active_geese <= 0 then
+			spawn_geese(self)
+		end
+
+	elseif message_id == hash("goose_fell_done") then
+		remove_goose(self, sender)
+		self.active_geese = self.active_geese - 1
+		print("Goose hit and fell. Remaining:", self.active_geese)
+
+		if self.active_geese <= 0 then
+			spawn_geese(self)
+		end
+
+	elseif message_id == hash("set_loader_url") then
+		self.loader_url = message.loader
+		print("Stored loader URL:", self.loader_url)
+
+	elseif message_id == hash("restart") then
+		self.game_over = false
+		if self.loader_url then
+			print("[Goose Hunt] Relaying restart to loader after 5s delay")
+			-- Add delay to allow any pending HTTP requests to complete
+			timer.delay(5.0, false, function()
+				msg.post(self.loader_url, "restart")
+			end)
+		else
+			print("[Goose Hunt] Loader URL not set — cannot restart")
+		end
+
+	elseif message_id == hash("guy_ready") then
+		self.guy_ready = true
+		print("Guy is ready — input unlocked")
+
+	elseif message_id == hash("projection_info") then
+		-- Debug: capture current projection
+		self.left   = message.left
+		self.right  = message.right
+		self.bottom = message.bottom
+		self.top    = message.top
+		self.win_w  = message.win_w
+		self.win_h  = message.win_h
+		self.has_projection = true
+		print(string.format("Goose projection: win %.1fx%.1f world L%.1f B%.1f R%.1f T%.1f",
+			self.win_w, self.win_h, self.left, self.bottom, self.right, self.top))
+	end
+end

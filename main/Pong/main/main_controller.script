@@ -1,0 +1,125 @@
+local BALL_OUT_OF_BOUNDS = hash("ball_out_of_bounds")
+local UPDATE_LEFT_SCORE = hash("update_left_score")
+local UPDATE_RIGHT_SCORE = hash("update_right_score")
+local GAME_OVER = hash("game_over")
+local START_GAME = hash("start_game")
+
+local auth = require("main.scripts.auth")
+local game_stats = require("main.scripts.game_stats")
+
+local MAX_SCORE = 5
+local function spawn_ball(self)
+	factory.create("ballfactory#factory", self.ball_initial_pos)
+end
+
+local function initialize_game(self)
+	spawn_ball(self)
+
+	self.left_score = 0
+	self.right_score = 0
+	self.is_game_over = false
+end
+function init(self)
+	math.randomseed(os.time()) 
+	math.random()
+
+	msg.post(".", "acquire_input_focus")
+	
+	self.game_width = tonumber(sys.get_config_int("display.width"))
+	self.game_height = tonumber(sys.get_config_int("display.height"))
+
+	self.ball_initial_pos = vmath.vector3(self.game_width/ 2, self.game_height/2, 0.5)
+	
+	-- Load user session for score submission
+	local session = auth.load_session()
+	self.username = session and session.username or "Guest"
+	
+	-- Initialize game stats tracker
+	self.stats = game_stats.new("pong")
+
+	self.left_score  = 0
+	self.right_score = 0
+
+	initialize_game(self)
+end
+
+local function check_game_over(self, winner)
+	if self.left_score >= MAX_SCORE or self.right_score >= MAX_SCORE then
+		self.is_game_over = true
+		
+		-- Determine winner and loser
+		local left_is_winner = self.left_score >= MAX_SCORE
+		local player_won = left_is_winner  -- Player controls left paddle
+		local winner_score = left_is_winner and self.left_score or self.right_score
+		local loser_score = left_is_winner and self.right_score or self.left_score
+		local winner_name = left_is_winner and "Left" or "Right"
+		
+		-- Populate game stats
+		self.stats:set_score(winner_score)
+		self.stats:set_level(1)
+		self.stats:finalize()
+		
+		print("[Pong] Game Over - " .. winner_name .. " player wins with score:", winner_score)
+		print("[Pong] Player " .. (player_won and "WON" or "LOST"))
+		
+		-- Submit score for player
+		-- For competitive games, submit the score they achieved
+		-- The database will track wins/losses based on comparing scores
+		if self.username and self.username ~= "Guest" then
+			-- Submit the actual score achieved
+			local submit_score = player_won and winner_score or loser_score
+			print("[Pong] *** SUBMITTING SCORE IMMEDIATELY ***")
+			auth.submit_score(self.username, "pong", submit_score, 1, function(result)
+				if result then
+					print("[Pong] ✓ Score submitted successfully: " .. submit_score)
+				else
+					print("[Pong] Score submission will retry")
+				end
+			end)
+		end
+		
+		-- Wait 5 seconds to guarantee HTTP callback completes before proxy unloads
+		timer.delay(5.0, false, function()
+			print("[Pong] *** SHOWING GAME OVER SCREEN ***")
+			msg.post("gui#main", GAME_OVER, {winner = winner})
+		end)
+		return true
+	end
+	return false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == BALL_OUT_OF_BOUNDS then
+		if message.x > self.game_width/2 then
+			self.left_score = self.left_score + 1
+			msg.post("gui#main", UPDATE_LEFT_SCORE, {left_score = self.left_score})
+		
+			if check_game_over(self, "Left player") then
+				return
+			
+			end
+		
+		else
+			self.right_score = self.right_score + 1
+			msg.post("gui#main", UPDATE_RIGHT_SCORE, {right_score = self.right_score})
+
+			if check_game_over(self, "Right player") then
+				return
+
+			end
+		end
+		spawn_ball(self)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == START_GAME then
+		if not self.is_game_over then
+			return
+		end
+
+		initialize_game(self)
+		msg.post("gui#main", START_GAME)
+	end
+
+end	

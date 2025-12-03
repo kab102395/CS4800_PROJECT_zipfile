@@ -1,0 +1,37 @@
+[bootstrap]
+main_collection = /main/collections/main.collectionc
+render = /main/custom.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 512
+height = 640
+high_dpi = 0
+fullscreen = 0
+dynamic_orientation = 0
+
+[android]
+input_method = HiddenInputField
+
+[html5]
+scale_mode = fit
+
+[project]
+title = goose_hunt
+dependencies#0 = https://github.com/defold/extension-websocket/archive/refs/tags/4.1.1.zip
+dependencies#1 = https://github.com/defold/extension-spine/archive/refs/tags/4.1.3.zip
+
+[sprite]
+max_count = 400
+
+[particle_fx]
+max_particle_count = 4000
+max_count = 400
+max_emitter_count = 400
+max_particle_buffer_count = 4000
+
+[collection_proxy]
+max_count = 16
+

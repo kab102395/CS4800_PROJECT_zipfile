@@ -1,0 +1,231 @@
+-- game.script (Puzzle)
+
+local auth = require("main.scripts.auth")
+local game_stats = require("main.scripts.game_stats")
+
+----------------------------------------------------------------
+-- Helpers (unchanged from your original)
+----------------------------------------------------------------
+
+local function inversions(t)
+	local inv = 0
+	for i = 1, #t do
+		for j = i + 1, #t do
+			if t[i] > t[j] and t[j] ~= 0 then
+				inv = inv + 1
+			end
+		end
+	end
+	return inv
+end
+
+local function find(t, tile)
+	for i = 1, #t do
+		if t[i] == tile then
+			local y = 5 - math.ceil(i / 4)
+			local x = i - (math.ceil(i / 4) - 1) * 4
+			return x, y
+		end
+	end
+	return nil, nil
+end
+
+local function solvable(t)
+	local x, y = find(t, 0)
+	if y % 2 == 1 and inversions(t) % 2 == 0 then
+		return true
+	end
+	if y % 2 == 0 and inversions(t) % 2 == 1 then
+		return true
+	end
+	return false
+end
+
+local function scramble(t)
+	for i = 1, #t do
+		local tmp = t[i]
+		local r = math.random(#t)
+		t[i] = t[r]
+		t[r] = tmp
+	end
+	return t
+end
+
+local function swap(t, i, j)
+	local tmp = t[i]
+	t[i] = t[j]
+	t[j] = tmp
+	return t
+end
+
+local function draw(t)
+	for i = 1, #t do
+		local y = 5 - math.ceil(i / 4)
+		local x = i - (math.ceil(i / 4) - 1) * 4
+		tilemap.set_tile("#grid", "layer1", x, y, t[i])
+	end
+end
+
+----------------------------------------------------------------
+-- Script
+----------------------------------------------------------------
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	math.randomseed(socket.gettime())
+
+	-- Board
+	self.board = scramble({ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0 })
+	while not solvable(self.board) do
+		self.board = scramble(self.board)
+	end
+	draw(self.board)
+
+	self.done = false
+	msg.post("#done", "disable")
+
+	-- Tile size in WORLD units (your original logic assumed 128)
+	self.tile_w = 128
+	self.tile_h = 128
+	self.board_w = self.tile_w * 4
+	self.board_h = self.tile_h * 4
+
+	-- World position of the game object this script is on.
+	-- These will be overridden once we get projection_info
+	self.grid_center = go.get_world_position(".")
+	self.board_origin_x = self.grid_center.x - self.tile_w * 0.5
+	self.board_origin_y = self.grid_center.y - self.tile_h * 0.5
+
+	-- Projection info from render
+	self.has_projection = false
+	self.left   = 0
+	self.right  = 0
+	self.bottom = 0
+	self.top    = 0
+	self.win_w  = 0
+	self.win_h  = 0
+
+	-- Load user session for score submission
+	local session = auth.load_session()
+	self.username = session and session.username or "Guest"
+	
+	-- Initialize game stats tracker
+	self.stats = game_stats.new("puzzle")
+	self.start_time = socket.gettime()
+
+	-- Register with proxy_relay to receive projection_info
+	msg.post("main:/proxy_relay#script", "register_projection_client")
+end
+
+function on_message(self, message_id, message)
+	if message_id == hash("projection_info") then
+		self.left   = message.left
+		self.right  = message.right
+		self.bottom = message.bottom
+		self.top    = message.top
+		self.win_w  = message.win_w
+		self.win_h  = message.win_h
+		self.has_projection = true
+
+		-- Center the board within the current projection (ignore GO placement)
+		self.board_origin_x = (self.left + self.right - self.board_w) * 0.5
+		self.board_origin_y = (self.bottom + self.top - self.board_h) * 0.5
+
+		-- Fine-tune: slight upward/left shift to match visual tiles
+		local tweak = 8 -- pixels
+		self.board_origin_x = self.board_origin_x + tweak
+		self.board_origin_y = self.board_origin_y + tweak
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id ~= hash("press") or not action.pressed or self.done then
+		return
+	end
+	if not self.has_projection then
+		return
+	end
+
+	------------------------------------------------------------
+	-- 1) Screen → world (same math as render script)
+	------------------------------------------------------------
+	local gx = self.left   + (action.x / self.win_w) * (self.right - self.left)
+	local gy = self.bottom + (action.y / self.win_h) * (self.top   - self.bottom)
+
+	------------------------------------------------------------
+	-- 2) World → local board coordinates
+	--    (0,0) at bottom-left of the BOARD, not at world origin
+	------------------------------------------------------------
+	local lx = gx - self.board_origin_x
+	local ly = gy - self.board_origin_y
+
+	-- Outside the 4x4 board area?
+	if lx < 0 or lx > self.board_w or ly < 0 or ly > self.board_h then
+		print("Outside puzzle area")
+		return
+	end
+
+	------------------------------------------------------------
+	-- 3) Local → tile indices (same as original, but relative)
+	--    x,y: 1..4, bottom-to-top
+	------------------------------------------------------------
+	local x = math.ceil(lx / self.tile_w)
+	local y = math.ceil(ly / self.tile_h)
+
+	print("DEBUG: Clicked tile:", x, y,
+	"screen:", action.x, action.y,
+	"world:", gx, gy,
+	"local:", lx, ly)
+
+	------------------------------------------------------------
+	-- 4) Apply original move logic
+	------------------------------------------------------------
+	local ex, ey = find(self.board, 0)
+	if ex and ey and (math.abs(x - ex) + math.abs(y - ey) == 1) then
+		self.board = swap(self.board, (4 - ey) * 4 + ex, (4 - y) * 4 + x)
+		draw(self.board)
+	end
+
+	ex, ey = find(self.board, 0)
+	if inversions(self.board) == 0 and ex == 4 then
+		self.done = true
+		
+		-- Calculate solve time
+		local solve_time = math.floor(socket.gettime() - self.start_time)
+		
+		-- Populate game stats
+		self.stats:set_score(solve_time)
+		self.stats:set_level(1)
+		self.stats:finalize()
+		
+		print("[Puzzle] Solved in", solve_time, "seconds")
+		
+		-- Submit score asynchronously if user is logged in
+		if self.username and self.username ~= "Guest" then
+			print("[Puzzle] *** SUBMITTING SCORE IMMEDIATELY ***")
+			auth.submit_score(self.username, "puzzle", solve_time, 1, function(result)
+				if result then
+					print("[Puzzle] ✓ Score submitted successfully")
+				else
+					print("[Puzzle] Score submission will retry")
+				end
+			end)
+		end
+		
+		-- Wait 5 seconds to guarantee HTTP callback completes before proxy unloads
+		timer.delay(5.0, false, function()
+			print("[Puzzle] *** ENABLING GAME OVER SCREEN ***")
+			msg.post("#done", "enable")
+		end)
+	end
+end
+
+function on_reload(self)
+	self.done = false
+	msg.post("#done", "disable")
+end
+
+function final(self)
+	-- Stop receiving projection info when this proxy unloads
+	msg.post("main:/proxy_relay#script", "unregister_projection_client")
+end

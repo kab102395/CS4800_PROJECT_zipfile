@@ -1,0 +1,230 @@
+animations {
+  id: "star"
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_01.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_02.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_03.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_04.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_05.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_06.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_07.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_08.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_09.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_10.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_11.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_12.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_13.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_14.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_15.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_16.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_17.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_18.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_19.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_20.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_21.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_22.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_23.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/star_00.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+}
+animations {
+  id: "bonus_star"
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_00.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_01.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_02.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_03.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_04.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_05.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_06.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_07.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_08.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_09.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_10.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_11.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_12.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_13.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_14.png"
+    pivot_x: 0.522043
+    pivot_y: 0.455914
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_15.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_16.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_17.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_18.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_19.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_20.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_21.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_22.png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bonus_star_23.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+}
+animations {
+  id: "bad_star"
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (1).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (2).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (3).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (4).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (5).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (6).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (7).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (8).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (9).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (10).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (11).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (12).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (13).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (14).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (15).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (16).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (17).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (18).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (19).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (20).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (21).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (22).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (23).png"
+  }
+  images {
+    image: "/main/spaceShooterGame-main/stars/bad_star_00 - Copy (24).png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+}

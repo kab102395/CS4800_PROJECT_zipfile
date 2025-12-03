@@ -1,0 +1,52 @@
+name: "level"
+instances {
+  id: "hero"
+  prototype: "/main/runner_stan-main/hero/hero.go"
+  position {
+    x: 360.0
+    y: 140.0
+  }
+  scale3 {
+    x: 0.6
+    y: 0.6
+    z: 0.6
+  }
+}
+instances {
+  id: "backpack"
+  prototype: "/main/runner_stan-main/hero/backpack.go"
+  position {
+    x: 350.0
+    y: 390.0
+  }
+  scale3 {
+    x: 0.6
+    y: 0.6
+    z: 0.6
+  }
+}
+collection_instances {
+  id: "ground"
+  collection: "/main/runner_stan-main/main/ground.collection"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "controller"
+  data: "components {\n"
+  "  id: \"controller\"\n"
+  "  component: \"/main/runner_stan-main/level/controller.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"platform_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/runner_stan-main/level/objects/desk_platform.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"platform_long_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/runner_stan-main/level/objects/desk_platform_long.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}

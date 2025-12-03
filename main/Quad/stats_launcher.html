@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stats Launcher</title>
+  <style>
+    body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; }
+  </style>
+</head>
+<body>
+  <div>Opening stats...</div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    let username = params.get('user');
+    if (!username && window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      username = hashParams.get('user');
+    }
+    const target = window.location.href.replace('stats_launcher.html', 'stats_react.html').split('#')[0].split('?')[0];
+    const url = username ? `${target}?user=${encodeURIComponent(username)}#user=${encodeURIComponent(username)}` : target;
+    const popup = window.open(url, 'StatsReactPopup', 'width=520,height=720,resizable=yes,scrollbars=yes');
+    if (!popup) {
+      document.body.textContent = 'Popup blocked. Please allow popups and try again.';
+    } else {
+      window.close();
+    }
+  </script>
+</body>
+</html>

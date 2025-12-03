@@ -1,0 +1,203 @@
+script: "/main/scripts/ghscripts/hud_gui_script.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 250.0
+    y: 590.0
+  }
+  size {
+    x: 500.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "score_bg"
+  inherit_alpha: true
+  alpha: 0.61
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 127.0
+    y: 590.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Score: 0"
+  font: "default"
+  id: "score_label"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 367.0
+    y: 590.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Missed: 0"
+  font: "default"
+  id: "missed_label"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 100.0
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "bull_bg"
+  inherit_alpha: true
+  alpha: 0.61
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 100.0
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Bullets: 0"
+  font: "default"
+  id: "bullet_label"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 320.0
+  }
+  size {
+    x: 960.0
+    y: 640.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "game_over_panel"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+}
+nodes {
+  position {
+    y: 200.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Score: 0"
+  font: "default"
+  id: "final_score"
+  parent: "game_over_panel"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 125.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Missed Geese: 0"
+  font: "default"
+  id: "missed_geese"
+  parent: "game_over_panel"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Geese Hit: 0"
+  font: "default"
+  id: "total_geese"
+  parent: "game_over_panel"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -25.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Accuracy: 0"
+  font: "default"
+  id: "accuracy"
+  parent: "game_over_panel"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -170.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "restart_button"
+  parent: "game_over_panel"
+  inherit_alpha: true
+  alpha: 0.5
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Restart"
+  font: "default"
+  id: "restart"
+  parent: "restart_button"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

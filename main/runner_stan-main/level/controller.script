@@ -1,0 +1,96 @@
+-- controller.script
+go.property("speed", 360)
+
+local backend = require "main.runner_stan-main.net.backend"
+
+local grid = 460
+local platform_heights = { 100, 200, 350 }
+local extra_credit_count = 3 -- <1>
+
+local function fetch_leaderboard(self)
+	backend.fetch_runs(function(success, data)
+		if success and data and data.runs then
+			msg.post("/ui#gui", "leaderboard_update", { runs = data.runs })
+		end
+	end)
+end
+
+local function reset_world(self)
+	for i,p in ipairs(self.spawns) do
+		go.delete(p)
+	end
+	self.spawns = {}
+	self.distance = 0
+	self.run_extra_credit = 0
+end
+
+local function report_run(self)
+	local score = math.floor(self.distance)
+	local extra_credit_collected = self.run_extra_credit
+	if score <= 0 and extra_credit_collected <= 0 then
+		return
+	end
+	backend.post_run(score, extra_credit_collected, function(success)
+		if success then
+			fetch_leaderboard(self)
+		end
+	end)
+end
+
+function init(self)
+	msg.post("ground/controller#ground", "set_speed", { speed = self.speed })
+	msg.post("/ui#gui", "reset_score")
+	self.gridw = 0
+	self.spawns = {} -- <1>
+	self.distance = 0
+	self.run_extra_credit = 0
+	fetch_leaderboard(self)
+	-- Send a test score on enter to validate API integration
+	backend.post_run(1, 0, function(success)
+		print("[Runner] Test score submit on enter: " .. tostring(success))
+	end)
+end
+
+function update(self, dt)
+	self.gridw = self.gridw + self.speed * dt
+	self.distance = self.distance + self.speed * dt
+
+	if self.gridw >= grid then
+		self.gridw = 0
+
+		-- Maybe spawn a platform at random height
+		if math.random() > 0.2 then
+			local h = platform_heights[math.random(#platform_heights)]
+			local f = "#platform_factory"
+			local extra_credit = extra_credit_count
+			if math.random() > 0.5 then
+				f = "#platform_long_factory"
+				extra_credit = extra_credit * 2 -- Twice the number of extra credit on long platforms
+			end
+			local p = factory.create(f, vmath.vector3(1600, h, 0), nil, {}, 0.6)
+			msg.post(p, "set_speed", { speed = self.speed })
+			msg.post(p, "create_extra_credit", { extra_credit = extra_credit })
+			table.insert(self.spawns, p)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("reset") then -- <2>
+		-- Tell the hero to reset.
+		msg.post("hero#hero", "reset")
+		msg.post("/ui#gui", "reset_score")
+		reset_world(self)
+	elseif message_id == hash("delete_spawn") then -- <3>
+		for i,p in ipairs(self.spawns) do
+			if p == message.id then
+				table.remove(self.spawns, i)
+				go.delete(p)
+			end
+		end
+	elseif message_id == hash("extra_credit_collected") then
+		self.run_extra_credit = self.run_extra_credit + (message and message.value or 1)
+	elseif message_id == hash("report_run") then
+		report_run(self)
+	end
+end

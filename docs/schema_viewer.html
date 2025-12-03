@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TTT Server Schema Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#0f172a; color:#e2e8f0; }
+    h1 { margin-bottom: 6px; }
+    .tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .card { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); }
+    .name { font-weight: 700; color: #60a5fa; margin-bottom: 6px; }
+    .col { font-size: 13px; line-height: 1.4; color: #cbd5e1; }
+    .key { color: #fbbf24; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>TTT Server Schema</h1>
+  <div class="tables">
+    <div class="card"><div class="name">users</div>
+      <div class="col"><span class="key">user_id</span> INT PK AUTO</div>
+      <div class="col">username TEXT UNIQUE NOT NULL</div>
+      <div class="col">password_hash TEXT NOT NULL</div>
+      <div class="col">email TEXT UNIQUE</div>
+      <div class="col">created_at TIMESTAMP</div>
+      <div class="col">last_login TIMESTAMP</div>
+      <div class="col">is_active BOOLEAN</div>
+    </div>
+    <div class="card"><div class="name">user_game_scores</div>
+      <div class="col"><span class="key">score_id</span> INT PK AUTO</div>
+      <div class="col">user_id INT FK users</div>
+      <div class="col">game_name TEXT</div>
+      <div class="col">score INT</div>
+      <div class="col">level INT</div>
+      <div class="col">timestamp TIMESTAMP</div>
+      <div class="col">duration_seconds INT</div>
+    </div>
+    <div class="card"><div class="name">user_game_stats</div>
+      <div class="col"><span class="key">stat_id</span> INT PK AUTO</div>
+      <div class="col">user_id INT FK users</div>
+      <div class="col">game_name TEXT</div>
+      <div class="col">total_plays INT</div>
+      <div class="col">best_score INT</div>
+      <div class="col">average_score REAL</div>
+      <div class="col">total_score INT</div>
+      <div class="col">wins INT, losses INT, draws INT</div>
+      <div class="col">last_played TIMESTAMP</div>
+      <div class="col">UNIQUE(user_id, game_name)</div>
+    </div>
+    <div class="card"><div class="name">player_sessions</div>
+      <div class="col"><span class="key">session_id</span> TEXT PK</div>
+      <div class="col">player_name TEXT</div>
+      <div class="col">connected_at TIMESTAMP</div>
+      <div class="col">last_heartbeat TIMESTAMP</div>
+      <div class="col">websocket_id TEXT</div>
+      <div class="col">connection_status TEXT</div>
+      <div class="col">retry_count INT</div>
+    </div>
+    <div class="card"><div class="name">game_matches</div>
+      <div class="col"><span class="key">match_id</span> TEXT PK</div>
+      <div class="col">player1_session TEXT FK</div>
+      <div class="col">player2_session TEXT FK</div>
+      <div class="col">board TEXT</div>
+      <div class="col">current_turn TEXT</div>
+      <div class="col">status TEXT</div>
+      <div class="col">result TEXT</div>
+      <div class="col">created_at / updated_at / last_move_at TIMESTAMP</div>
+      <div class="col">state_version INT</div>
+    </div>
+    <div class="card"><div class="name">game_moves</div>
+      <div class="col"><span class="key">move_id</span> INT PK AUTO</div>
+      <div class="col">match_id TEXT FK</div>
+      <div class="col">session_id TEXT FK</div>
+      <div class="col">cell_position INT</div>
+      <div class="col">mark TEXT</div>
+      <div class="col">timestamp TIMESTAMP</div>
+      <div class="col">state_version INT</div>
+      <div class="col">validated BOOLEAN</div>
+    </div>
+    <div class="card"><div class="name">pending_notifications</div>
+      <div class="col"><span class="key">id</span> INT PK AUTO</div>
+      <div class="col">session_id TEXT FK</div>
+      <div class="col">notification_type TEXT</div>
+      <div class="col">data TEXT</div>
+      <div class="col">created_at TIMESTAMP</div>
+      <div class="col">attempts INT</div>
+      <div class="col">max_attempts INT</div>
+      <div class="col">next_retry TIMESTAMP</div>
+      <div class="col">delivered BOOLEAN</div>
+    </div>
+    <div class="card"><div class="name">connection_health</div>
+      <div class="col"><span class="key">session_id</span> TEXT PK</div>
+      <div class="col">last_ping TIMESTAMP</div>
+      <div class="col">last_pong TIMESTAMP</div>
+      <div class="col">ping_count INT</div>
+      <div class="col">missed_pings INT</div>
+      <div class="col">connection_quality REAL</div>
+    </div>
+    <div class="card"><div class="name">lobby_state</div>
+      <div class="col"><span class="key">id</span> INT PK (always 1)</div>
+      <div class="col">waiting_player_id TEXT FK</div>
+      <div class="col">waiting_player_name TEXT</div>
+      <div class="col">waiting_since TIMESTAMP</div>
+    </div>
+    <div class="card"><div class="name">player_stats</div>
+      <div class="col"><span class="key">player_name</span> TEXT PK</div>
+      <div class="col">total_games INT</div>
+      <div class="col">wins INT</div>
+      <div class="col">losses INT</div>
+      <div class="col">draws INT</div>
+      <div class="col">win_rate REAL</div>
+      <div class="col">last_game TIMESTAMP</div>
+    </div>
+    <div class="card"><div class="name">schema_version</div>
+      <div class="col"><span class="key">version</span> INT PK</div>
+    </div>
+  </div>
+</body>
+</html>

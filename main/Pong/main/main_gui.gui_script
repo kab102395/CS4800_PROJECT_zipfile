@@ -1,0 +1,56 @@
+local UPDATE_LEFT_SCORE  = hash("update_left_score")
+local UPDATE_RIGHT_SCORE = hash("update_right_score")
+local GAME_OVER          = hash("game_over")
+local START_GAME         = hash("start_game")
+
+-- Helper to update a score node
+local function update_score(id, score)
+	local node = gui.get_node(id)
+	if not node then
+		print("GUI ERROR: Node '" .. id .. "' not found")
+		return
+	end
+
+	gui.animate(node, "color.w", 0, gui.EASING_LINEAR, 0.5, 0, nil, gui.PLAYBACK_ONCE_PINGPONG)
+	gui.set_text(node, tostring(score))
+end
+
+function on_message(self, message_id, message, sender)
+	print("GUI received message:", message_id)
+
+	if message_id == UPDATE_LEFT_SCORE then
+		print("Updating left score:", message.left_score)
+		update_score("left_score", message.left_score)
+
+	elseif message_id == UPDATE_RIGHT_SCORE then
+		print("Updating right score:", message.right_score)
+		update_score("right_score", message.right_score)
+
+	elseif message_id == GAME_OVER then
+		print("Game over message received, winner:", message.winner)
+		local node = gui.get_node("game_over")
+		if node then
+			gui.set_text(node, message.winner .. " has won!\n\nPress Enter to play again...")
+			gui.set_enabled(node, true)
+
+			local s = 1.04
+			gui.animate(node, gui.PROP_SCALE, vmath.vector3(s, s, s), gui.EASING_LINEAR, 3, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+		end
+
+	elseif message_id == START_GAME then
+		print("Start game message received")
+		local node = gui.get_node("game_over")
+		if node then
+			gui.set_enabled(node, false)
+		end
+
+		update_score("left_score", 0)
+		update_score("right_score", 0)
+		
+		-- Wait 5 seconds then return to Quad
+		timer.delay(5.0, false, function()
+			print("[Pong] *** RETURNING TO QUAD ***")
+			msg.post("main:/loader#loader", "load_game", {game = "quad"})
+		end)
+	end
+end

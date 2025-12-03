@@ -1,0 +1,50 @@
+script: "/main/runner_stan-main/main/ui.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 32.0
+    y: 688.0
+  }
+  type: TYPE_TEXT
+  text: "Extra Credit"
+  font: "default"
+  id: "score_label"
+  pivot: PIVOT_NW
+}
+nodes {
+  position {
+    y: -40.0
+  }
+  color {
+    y: 0.9490196
+    z: 0.3019608
+  }
+  type: TYPE_TEXT
+  text: "0"
+  font: "default"
+  id: "score_value"
+  pivot: PIVOT_NW
+  parent: "score_label"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 688.0
+  }
+  size {
+    x: 400.0
+    y: 200.0
+  }
+  type: TYPE_TEXT
+  text: "Awaiting runs..."
+  font: "default"
+  id: "leaderboard_list"
+  pivot: PIVOT_N
+  line_break: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+max_nodes: 64

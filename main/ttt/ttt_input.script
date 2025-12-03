@@ -1,0 +1,9 @@
+function init(self)
+    msg.post(".", "acquire_input_focus")
+end
+
+function on_input(self, action_id, action)
+    -- Forward input to the GUI
+    -- The GUI component will handle it directly
+    return false  -- Don't consume input, let it pass to GUI
+end

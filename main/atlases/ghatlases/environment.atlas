@@ -1,0 +1,7 @@
+images {
+  image: "/images/Background.png"
+}
+images {
+  image: "/images/Bush.png"
+}
+extrude_borders: 2

@@ -1,0 +1,58 @@
+local auth = require("main.scripts.auth")
+
+function init(self)
+	self.username = ""
+	self.input_node = gui.get_node("username_input")
+	gui.set_text(self.input_node, self.username)
+	msg.post(".", "acquire_input_focus")
+	print("[Login] Initialized - ready for input")
+end
+
+function on_input(self, action_id, action)
+	if not action_id then
+		return false
+	end
+	
+	-- Only handle text input and keys, not other inputs
+	if action_id == hash("text") then
+		if action.text and string.len(self.username) < 20 and action.text ~= " " then
+			self.username = self.username .. action.text
+			gui.set_text(self.input_node, self.username)
+			print("[Login] Input: " .. self.username)
+		end
+		return true
+	end
+	
+	-- Backspace
+	if action_id == hash("key_backspace") and action.released then
+		self.username = string.sub(self.username, 1, -2)
+		gui.set_text(self.input_node, self.username)
+		print("[Login] Backspace: " .. self.username)
+		return true
+	end
+	
+	-- Enter/Return key
+	if action_id == hash("key_enter") and action.released then
+		if string.len(self.username) > 0 then
+			-- Save username to session with proper arguments
+			auth.save_session(1, self.username)
+			
+			print("[Login] User '" .. self.username .. "' logged in")
+			gui.set_text(gui.get_node("status"), "Welcome, " .. self.username .. "!")
+			
+			-- Transition directly to game menu (no ESC needed)
+			timer.delay(0.5, false, function()
+				msg.post("main:/proxy_relay#script", "show_game_menu")
+			end)
+		else
+			gui.set_text(gui.get_node("status"), "Please enter a username")
+		end
+		return true
+	end
+	
+	return false
+end
+
+function on_message(self, message_id, message, sender)
+	-- Handle any messages if needed
+end

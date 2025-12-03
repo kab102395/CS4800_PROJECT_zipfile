@@ -1,0 +1,5 @@
+images {
+  image: "/level/images/background_real.png"
+}
+extrude_borders: 2
+

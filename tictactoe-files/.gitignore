@@ -1,0 +1,67 @@
+# Java/Gradle build artifacts
+java-server/build/
+java-server/.gradle/
+java-server/bin/
+java-server/database/
+*.class
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Keep Gradle wrapper (needed for builds)
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Database files
+
+
+# Defold build artifacts
+defold-client/build/
+*.luac
+*.projectc
+*.collectionc
+*.gui_scriptc
+*.guic
+*.fontc
+*.materialc
+*.texture_profilesc
+*.gamepadsc
+*.display_profilesc
+*.render_scriptc
+*.renderc
+*.input_bindingc
+*_generated_*.spc
+*_generated_*.goc
+*_generated_*.glyph_bankc
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+java-server/build/x86_64-win32/log.txt
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Keep test files and documentation
+!test_*.ps1
+!test_*.html
+!database_er_diagram.html

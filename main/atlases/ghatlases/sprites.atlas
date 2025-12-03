@@ -1,0 +1,43 @@
+images {
+  image: "/images/rock.png"
+}
+animations {
+  id: "Idle"
+  images {
+    image: "/images/idle2.png"
+  }
+  images {
+    image: "/images/idle3.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 2
+}
+animations {
+  id: "Throw"
+  images {
+    image: "/images/throw.png"
+  }
+  fps: 10
+}
+animations {
+  id: "flap"
+  images {
+    image: "/images/Goose1.png"
+  }
+  images {
+    image: "/images/Goose2.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 5
+}
+animations {
+  id: "explode"
+  images {
+    image: "/images/Explosion1.png"
+  }
+  images {
+    image: "/images/Explosion2.png"
+  }
+  fps: 10
+}
+extrude_borders: 2

@@ -1,0 +1,44 @@
+local TABLE_COLLISION = hash("table_collision")
+local ENTER_GAME = hash("enter_game")
+local TABLE1 = hash("/table1")
+local TABLE2 = hash("/table2")
+local TABLE3 = hash("/table3")
+local TABLE4 = hash("/table4")
+local TABLE5 = hash("/table5")
+local TABLE6 = hash("/table6")
+
+local game_on = false
+
+function on_input(self, action_id, action)
+	if action_id == ENTER_GAME and action.pressed then
+		game_on = true
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == TABLE_COLLISION then
+		local other_id = message.other_id
+
+		if self.previous_other_id == other_id then
+			return
+		end
+
+		if game_on then
+			if other_id == TABLE1 then
+				msg.post("main:/loader#loader", "launch_game", { game = "pong" })
+			elseif other_id == TABLE2 then
+				msg.post("main:/loader#loader", "launch_game", { game = "goose" })
+			elseif other_id == TABLE3 then
+				msg.post("main:/loader#loader", "launch_game", { game = "tictactoe" })
+			elseif other_id == TABLE4 then
+				msg.post("main:/loader#loader", "launch_game", { game = "puzzle" })
+			elseif other_id == TABLE5 then
+				msg.post("main:/loader#loader", "launch_game", { game = "linker" })
+			elseif other_id == TABLE6 then
+				msg.post("main:/loader#loader", "launch_game", { game = "runner" })
+			end
+		end
+
+		self.previous_other_id = other_id
+	end
+end

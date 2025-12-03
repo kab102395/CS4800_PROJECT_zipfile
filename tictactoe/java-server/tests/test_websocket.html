@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enhanced WebSocket Test</title>
+</head>
+<body>
+    <h2>Enhanced TTT WebSocket Test</h2>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    <button onclick="testHeartbeat()">Test Heartbeat</button>
+    <button onclick="testConnectionQuality()">Test Connection Quality</button>
+    
+    <script>
+        let ws;
+        let sessionId = 'test-session-' + Math.random().toString(36).substr(2, 9);
+        let messageDiv = document.getElementById('messages');
+        let statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            console.log(message);
+            messageDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        function connect() {
+            ws = new WebSocket('ws://127.0.0.1:8080');
+            
+            ws.onopen = function() {
+                statusDiv.innerHTML = 'Connected';
+                log('WebSocket connected');
+                
+                // Register session
+                let registrationMessage = {
+                    sessionId: sessionId,
+                    t: 'register'
+                };
+                ws.send(JSON.stringify(registrationMessage));
+                log('Sent registration: ' + JSON.stringify(registrationMessage));
+            };
+            
+            ws.onmessage = function(event) {
+                log('Received: ' + event.data);
+                
+                try {
+                    let message = JSON.parse(event.data);
+                    
+                    // Handle heartbeat
+                    if (message.t === 'heartbeat') {
+                        // Respond to heartbeat
+                        let response = {
+                            t: 'heartbeat_response',
+                            sessionId: sessionId,
+                            timestamp: Date.now()
+                        };
+                        ws.send(JSON.stringify(response));
+                        log('Sent heartbeat response');
+                    }
+                    
+                } catch (e) {
+                    log('Error parsing message: ' + e.message);
+                }
+            };
+            
+            ws.onclose = function() {
+                statusDiv.innerHTML = 'Disconnected';
+                log('WebSocket disconnected');
+            };
+            
+            ws.onerror = function(error) {
+                statusDiv.innerHTML = 'Error';
+                log('WebSocket error: ' + error);
+            };
+        }
+        
+        function testHeartbeat() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                let heartbeatTest = {
+                    t: 'heartbeat_response',
+                    sessionId: sessionId,
+                    timestamp: Date.now()
+                };
+                ws.send(JSON.stringify(heartbeatTest));
+                log('Sent heartbeat test: ' + JSON.stringify(heartbeatTest));
+            }
+        }
+        
+        function testConnectionQuality() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                let qualityTest = {
+                    t: 'connection_quality',
+                    sessionId: sessionId,
+                    quality: 0.95
+                };
+                ws.send(JSON.stringify(qualityTest));
+                log('Sent connection quality test: ' + JSON.stringify(qualityTest));
+            }
+        }
+        
+        // Start connection
+        connect();
+    </script>
+</body>
+</html>

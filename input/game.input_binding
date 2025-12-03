@@ -1,0 +1,160 @@
+key_trigger {
+  input: KEY_T
+  action: "key_t"
+}
+key_trigger {
+  input: KEY_ESC
+  action: "key_esc"
+}
+key_trigger {
+  input: KEY_W
+  action: "up"
+}
+key_trigger {
+  input: KEY_A
+  action: "left"
+}
+key_trigger {
+  input: KEY_S
+  action: "down"
+}
+key_trigger {
+  input: KEY_D
+  action: "right"
+}
+key_trigger {
+  input: KEY_ENTER
+  action: "enter_game"
+}
+key_trigger {
+  input: KEY_ENTER
+  action: "key_enter"
+}
+key_trigger {
+  input: KEY_Q
+  action: "exit_game"
+}
+key_trigger {
+  input: KEY_Q
+  action: "key_q"
+}
+key_trigger {
+  input: KEY_L
+  action: "key_l"
+}
+key_trigger {
+  input: KEY_J
+  action: "key_j"
+}
+key_trigger {
+  input: KEY_R
+  action: "key_r"
+}
+key_trigger {
+  input: KEY_S
+  action: "key_s"
+}
+key_trigger {
+  input: KEY_B
+  action: "key_b"
+}
+key_trigger {
+  input: KEY_C
+  action: "key_c"
+}
+key_trigger {
+  input: KEY_BACKSPACE
+  action: "key_backspace"
+}
+key_trigger {
+  input: KEY_SPACE
+  action: "key_space"
+}
+key_trigger {
+  input: KEY_1
+  action: "key_1"
+}
+key_trigger {
+  input: KEY_2
+  action: "key_2"
+}
+key_trigger {
+  input: KEY_3
+  action: "key_3"
+}
+key_trigger {
+  input: KEY_4
+  action: "key_4"
+}
+key_trigger {
+  input: KEY_5
+  action: "key_5"
+}
+key_trigger {
+  input: KEY_6
+  action: "key_6"
+}
+key_trigger {
+  input: KEY_7
+  action: "key_7"
+}
+key_trigger {
+  input: KEY_8
+  action: "key_8"
+}
+key_trigger {
+  input: KEY_9
+  action: "key_9"
+}
+text_trigger {
+  input: TEXT
+  action: "text"
+}
+key_trigger {
+  input: KEY_S
+  action: "left_down"
+}
+key_trigger {
+  input: KEY_W
+  action: "left_up"
+}
+key_trigger {
+  input: KEY_UP
+  action: "right_up"
+}
+key_trigger {
+  input: KEY_DOWN
+  action: "right_down"
+}
+key_trigger {
+  input: KEY_ENTER
+  action: "start_game"
+}
+key_trigger {
+  input: KEY_UP
+  action: "up"
+}
+key_trigger {
+  input: KEY_DOWN
+  action: "down"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_1
+  action: "shoot"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_1
+  action: "touch"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_1
+  action: "press"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_1
+  action: "mouse_click"
+}
+touch_trigger {
+  input: TOUCH_MULTI
+  action: "shoot"
+}

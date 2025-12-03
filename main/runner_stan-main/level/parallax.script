@@ -1,0 +1,16 @@
+go.property("scroll_speed", 40)
+
+function init(self)
+	self.origin = go.get_position()
+	self.width = 1920
+end
+
+function update(self, dt)
+	local pos = go.get_position()
+	pos.x = pos.x - self.scroll_speed * dt
+	if pos.x < self.origin.x - self.width * 0.5 then
+		pos.x = self.origin.x
+	end
+	go.set_position(pos)
+end
+
